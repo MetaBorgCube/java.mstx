@@ -1,0 +1,6 @@
+* Notes
+
+
+** Classes (Section 8)
+   
+Inner classes are nested classes that are *not static*.
