@@ -1,0 +1,39 @@
+* Selected Subset of Java 11
+  
+** Whitelisted Language Features
+   
+- *Packages*
+- *Inner classes*
+- *Generic classes*
+- *Generic methods*
+- *Mutually recursive definitions*
+- *Interfaces*
+  Because this is the only way to have multiple parents of a class,
+  from which interesting namebinding and disambiguation problems arise.
+- *Overloading*
+  Because there is an obvious interplay between type-checking and namebinding here.
+
+** Blacklistes Language Features
+   
+- *Modules*
+- *Enum*
+- *Interface fields* (because they are always static final)
+- *Modifiers* (abstract, final, volatile, transient, private, protected, synchronized, strictfp)
+- *Receiver Parameters on method declarations*
+- *Arrays*
+- *Variable arity paramaters* i.e. `m(Int as...)`
+- *Decorators* e.g. @SuppressWarnings
+- *Unboxed types*
+- *Overriding*
+- *Checked exceptions* (throws)
+- *Variance annotations*
+- *Instance initializers*
+- *Erasure*
+
+** Whitelisted Type Checks
+
+** Blacklisted Type Checks
+   
+- *Definite assignment*
+- *Type errors caused by erasure*
+
