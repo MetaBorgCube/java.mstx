@@ -1,2 +1,119 @@
 main(tm) :- tm match
-  { CompilationUnit(pkgDecl, imports, typeDecls) -> ? }.
+  { CompilationUnit(pkgDecl, imports, typeDecls) -> {s}
+      new s,
+      type-declarations-ok(s, typeDecls)
+  }.
+
+// type-declarations-ok maps type-declaration-ok(*, list(*))
+
+type-declarations-ok(s, tds) :- tds match
+  { []       -> true
+  | (td:tds) -> type-declaration-ok(s, td), type-declarations-ok(s, tds)
+  }.
+
+// type-declaration-ok : scope * TypeDeclaration
+
+type-declaration-ok(s, td) :- td match
+  { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations)) -> {s_cls}
+      new s_cls
+    , s_cls -[ `LEX ]-> s
+    , s_cls -> Pair(id, CLASS(s_cls))
+    , s -[ `TYPE ]-> s_cls
+    , maybe-super-class-ok(s, maybeSuperClass, s_cls)
+    , maybe-super-interfaces-ok(s, maybeSuperInterfaces, s_cls)
+  | NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> {s_intf}
+      new s_intf
+    , s_intf -[ `LEX ]-> s
+    , s_intf -> Pair(id, INTF(s_intf))
+    , s -[ `TYPE ]-> s_intf
+    , maybe-extends-interfaces-ok(s, maybeExtendsInterfaces)
+  }. 
+
+// maybe-superclass-ok maps super-class-ok(*, list(*), *)
+
+maybe-super-class-ok(s, sc, s_this) :- sc match
+  { None()   -> true
+  | Some(sc) -> super-class-ok(s, sc, s_this)
+  }.
+
+// superclass-ok : scope * SuperClass * scope
+
+super-class-ok(s, sc, s_this) :- sc match
+  { SuperClass(classType) -> {s_super}
+      class-type-ok(s, classType, CLASS(s_super))
+    , s_this -[ `EXT ]-> s_super
+  }.
+
+// maybe-super-interfaces-ok maps super-interfaces-ok(*, list(*), *)
+
+maybe-super-interfaces-ok(s, si, s_this) :- si match
+  { None()   -> true
+  | Some(si) -> super-interfaces-ok(s, si, s_this)
+  }.
+
+// super-interfaces-ok : scope * SuperInterfaces * scope
+
+super-interfaces-ok(s, si, s_this) :- si match
+  { SuperInterface(classTypes) -> {types}
+      class-types-ok(s, classTypes, types)
+    , implement-interfaces(types, s)
+  }.
+
+// implement-interfaces maps implement-interface(list(*), *)
+
+implement-interfaces(is, s_this) :- is match
+  { []     -> true
+  | (i:is) -> implement-interface(i, s_this)
+  }.
+
+// implement-interface : TYPE * scope
+
+implement-interface(i, s_this) :- i match
+  { INTF(s_intf) ->
+      s_this -[ `IMPL ]-> s_intf
+  }.
+
+// maybe-extendsinterfaces-ok maps extends-interfaces-ok(*, list(*))
+
+maybe-extends-interfaces-ok(s, ei, s_this) :- si match
+  { None()   -> true
+  | Some(ei) -> extends-interfaces-ok(s, ei, s_this)
+  }.
+
+// extends-interfaces-ok : scope * ExtendsInterfaces * scope
+
+extends-interfaces-ok(s, ei, s_this) :- ei match
+  { ExtendsInterfaces(classTypes) -> {types}
+      class-types-ok(s, classTypes, types)
+    , implement-interfaces(types, s_this)
+  }.
+
+// class-types-ok maps class-type-ok(*, list(*)) = list(*)
+
+class-types-ok(s, cts, tys) :- {ct-ty-s}
+  zip(cts, tys, ct-ty-s)
+, ct-ty-s match
+  { Pair(ct, ty) -> class-type-ok(s, ct, ty)
+  }.
+
+// class-type-ok : scope * ClassType -> TYPE
+
+class-type-ok(s, ct, ty) :- ct match
+  { ClassType(annotations, id, maybeTypeArguments) -> {reached, matched, visible}
+      query s (`LEX* `IMP*) as reached
+    , filter reached (Pair(id', ty') where id' = id) matched
+    , min matched lexico(`TYPE < `LEX) visible
+    , only(visible, Pair(id, ty))
+  | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s_imp, s_cls}
+      class-type-ok(s, classType, CLASS(s_cls))
+    , new s_imp
+    , s_imp -[ `IMP ]-> s_cls
+    , class-type-ok(s_imp, ClassType(annotations, id, maybeTypeArguments), ty)
+  }.
+
+// zip : list(X) * list(Y) -> list(X * Y)
+
+zip(xs,ys,xys) :- Pair(xs, ys) match
+  { Pair([], [])         -> xys = []
+  | Pair((x:xs), (y:ys)) -> {xys2} xys = (Pair(x,y):xys2), zip(xs, ys, xys2)
+  }.
