@@ -7,26 +7,29 @@ main(tm) :- tm match
 // type-declarations-ok maps type-declaration-ok(*, list(*))
 
 type-declarations-ok(s, tds) :- tds match
-  { []       -> true
-  | (td:tds) -> type-declaration-ok(s, td), type-declarations-ok(s, tds)
+  { []     -> true
+  | td:tds -> type-declaration-ok(s, td), type-declarations-ok(s, tds)
   }.
 
 // type-declaration-ok : scope * TypeDeclaration
 
 type-declaration-ok(s, td) :- td match
-  { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations)) -> {s_cls}
+  { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations) -> {s_cls}
       new s_cls
     , s_cls -[ `LEX ]-> s
     , s_cls -> Pair(id, CLASS(s_cls))
     , s -[ `TYPE ]-> s_cls
     , maybe-super-class-ok(s, maybeSuperClass, s_cls)
     , maybe-super-interfaces-ok(s, maybeSuperInterfaces, s_cls)
+    , type-declarations-ok(s_cls, classBodyDeclarations) // FIXME
   | NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> {s_intf}
       new s_intf
     , s_intf -[ `LEX ]-> s
     , s_intf -> Pair(id, INTF(s_intf))
     , s -[ `TYPE ]-> s_intf
-    , maybe-extends-interfaces-ok(s, maybeExtendsInterfaces)
+    , maybe-extends-interfaces-ok(s, maybeExtendsInterfaces, s_intf)
+    , type-declarations-ok(s_intf, interfaceMemberDeclarations) // FIXME
+  | lala -> true // FIXME remove after fixing recursive call above
   }. 
 
 // maybe-superclass-ok maps super-class-ok(*, list(*), *)
@@ -62,8 +65,8 @@ super-interfaces-ok(s, si, s_this) :- si match
 // implement-interfaces maps implement-interface(list(*), *)
 
 implement-interfaces(is, s_this) :- is match
-  { []     -> true
-  | (i:is) -> implement-interface(i, s_this)
+  { []   -> true
+  | i:is -> implement-interface(i, s_this)
   }.
 
 // implement-interface : TYPE * scope
@@ -75,7 +78,7 @@ implement-interface(i, s_this) :- i match
 
 // maybe-extendsinterfaces-ok maps extends-interfaces-ok(*, list(*))
 
-maybe-extends-interfaces-ok(s, ei, s_this) :- si match
+maybe-extends-interfaces-ok(s, ei, s_this) :- ei match
   { None()   -> true
   | Some(ei) -> extends-interfaces-ok(s, ei, s_this)
   }.
@@ -100,20 +103,38 @@ class-types-ok(s, cts, tys) :- {ct-ty-s}
 
 class-type-ok(s, ct, ty) :- ct match
   { ClassType(annotations, id, maybeTypeArguments) -> {reached, matched, visible}
-      query s (`LEX* `IMP*) as reached
+      query s `LEX*`IMPORT*`TYPE as reached
     , filter reached (Pair(id', ty') where id' = id) matched
     , min matched lexico(`TYPE < `LEX) visible
-    , only(visible, Pair(id, ty))
+    , {p} only(visible, p)
+    , datum(p, Pair(id, ty))
   | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s_imp, s_cls}
       class-type-ok(s, classType, CLASS(s_cls))
     , new s_imp
-    , s_imp -[ `IMP ]-> s_cls
+    , s_imp -[ `IMPORT ]-> s_cls
     , class-type-ok(s_imp, ClassType(annotations, id, maybeTypeArguments), ty)
   }.
 
 // zip : list(X) * list(Y) -> list(X * Y)
 
 zip(xs,ys,xys) :- Pair(xs, ys) match
-  { Pair([], [])         -> xys = []
-  | Pair((x:xs), (y:ys)) -> {xys2} xys = (Pair(x,y):xys2), zip(xs, ys, xys2)
+  { Pair([], [])     -> xys = []
+  | Pair(x:xs, y:ys) -> {xys2} xys = Pair(x,y):xys2, zip(xs, ys, xys2)
   }.
+
+// ----------------
+
+// s is the target scope of a path p
+tgt(p,s) :- p match
+  { end(x)       -> s = x
+  | edge(x,l,xs) -> tgt(xs,s)
+  }.
+
+// s is the source scope of a path p
+src(p,s) :- p match
+  { end(x)       -> s = x
+  | edge(x,l,xs) -> s = x
+  }.
+
+// d is the datum of the target of p
+datum(p,d) :- {s} tgt(p, s), s -> d.
