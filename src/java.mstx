@@ -120,39 +120,40 @@ class-member-declaration-ok(s, cmd) :- cmd match
 field-declaration-ok(s, fd) :- fd match
   { FieldDecl(fieldModifiers, unannType, varDecls) -> {ty}
       unann-type-ok(s, unannType, ty)
-    , var-decls-ok(s, varDecls)
-    , true // TODO
+    , var-decls-ok(s, varDecls, s, ty)
   }.
 
-// var-decl-id-ok : scope * VarDeclId
+// var-decls-ok : scope * list(VarDecl) * Type
 
-var-decl-id-ok(s, vdi) :- vdi match
-  { VariableDecl(id) ->
-      true // TODO
-  }.
-
-// var-decls-ok : scope * list(VarDecl)
-
-var-decls-ok(s, vds) :- vds match
+var-decls-ok(s, vds, s_def, ty) :- vds match
   { []     -> true
-  | vd:vds -> var-decl-ok(s, vd), var-decls-ok(s, vds)
+  | vd:vds -> var-decl-ok(s, vd, s_def, ty), var-decls-ok(s, vds, s_def, ty)
   }.
 
-// var-decl-ok : scope * VarDecl
+// var-decl-ok : scope * VarDecl * Type
 
-var-decl-ok(s, vd) :- vd match
+var-decl-ok(s, vd, s_def, ty) :- vd match
   { VariableDeclInit(vdi, vi) ->
-      var-decl-id-ok(s, vdi)
-    , true // TODO
+      var-decl-id-ok(vdi, s_def, ty)
+    , variable-initializer-ok(s, vi, ty)
   | VD2VDI(vdi) ->
-      var-decl-id-ok(s, vdi)
+      var-decl-id-ok(vdi, s_def, ty)
   }.
 
-// variable-initializer-ok : scope * VariableInitializer
+// var-decl-id-ok : VarDeclId * scope * Type
 
-variable-initializer-ok(s, vi) :- vi match
-  { VI2E(e) -> {ty}
-      expression-ok(s, e, ty)
+var-decl-id-ok(vdi, s_def, ty) :- vdi match
+  { VariableDecl(id) -> {s_var}
+      new s_var -> (id, ty)
+    , s_def -[ `VAR ]-> s_var
+  }.
+
+// variable-initializer-ok : scope * VariableInitializer * Type
+
+variable-initializer-ok(s, vi, ty) :- vi match
+  { VI2E(e) -> {ty'}
+      expression-ok(s, e, ty')
+    , sub-type(ty', ty)
   }.
 
 // method-declaration-ok : scope * MethodDeclaration
@@ -170,7 +171,7 @@ method-declaration-ok(s, md) :- md match
 method-header-ok(s, mh, decl) :- mh match
   { MethodHeader(result, id, formalParams, annotatedDimsEmpty, maybeThrows) -> {ty, tys}
       decl = (id, METHOD(ty, tys))
-    , true // TODO
+    , formal-params-ok(s, formalParams, tys)
     , result-ok(s, result, ty)
   }.
 
@@ -204,7 +205,7 @@ last-formal-param-ok(s, lfp, ty) :- lfp match
 formal-param-ok(s, fp, ty) :- fp match
   { FormalParam(variableModifiers, unannType, varDeclId) ->
       unann-type-ok(s, unannType, ty)
-    , true // TODO
+    , var-decl-id-ok(varDeclId, s, ty)
   }.
 
 // method-body-ok : scope * MethodBody
@@ -264,19 +265,47 @@ block-ok(s, b) :- b match
 
 block-statements-ok(s, bs) :- bs match
   { [] -> true
-  | BS2LVSD(lvsd):bs -> {s_blk}
+  | BS2LVDS(lvds):bs -> {s_blk}
       new s_blk
     , s_blk -[ `LEX ]-> s
-    , true // TODO
+    , local-variable-declaration-statement-ok(s_blk, lvds)
     , block-statements-ok(s_blk, bs)
   | BS2CD(cd):bs -> {s_blk}
       new s_blk
     , s_blk -[ `LEX ]-> s
     , class-declaration-ok(s_blk, cd)
     , block-statements-ok(s_blk, bs)
-  | BS2S(s):bs ->
-      true // TODO
+  | BS2S(stmt):bs ->
+      statement-ok(s, stmt)
     , block-statements-ok(s, bs)
+  }.
+
+// local-variable-declaration-statement-ok : 
+
+local-variable-declaration-statement-ok(s, lvds) :- lvds match
+  { LocVarDeclStm(lvd) -> local-variable-declaration-ok(s, lvd)
+  }.
+
+local-variable-declaration-ok(s, lvd) :- lvd match
+  { LocalVarDecl(variableModifiers, unannType, varDecls) -> {ty}
+      unann-type-ok(s, unannType, ty)
+    , var-decls-ok(s, varDecls, s, ty)
+  }.
+
+// statement-ok : scope * Statements
+
+statement-ok(s, stmt) :- stmt match
+  { S2B(b) ->
+      block-ok(s, b)
+  | Empty() ->
+      true
+  | ExpressionStatement(e) ->
+      expression-ok(s, e, _)
+  | Return() ->
+      true // TODO check void context
+  | Return(e) -> {ty}
+      expression-ok(s, e, ty)
+    , true // TODO check return type context
   }.
 
 // expression-ok : scope * Expression * Type
@@ -335,7 +364,7 @@ unann-reference-type-ok(s, urt, ty) :- urt match
 unann-class-type-ok(s, urt, ty) :- urt match
   { ClassType(id, maybeTypeArguments) ->
       true // TODO
-  | ClassOrInterfaceType(unannClassType, annotations, id, maybeTypeArguments) ->
+  | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) ->
       true // TODO
   }.
 
@@ -350,6 +379,11 @@ numeric-type-ok(s, nt, ty) :- nt match
   | Float()  -> ty = FLOAT()
   | Double() -> ty = DOUBLE()
   }.
+
+// sub-type : Type * Type
+
+sub-type(ty1, ty2) :-
+  true. // TODO
 
 // zip : list(X) * list(Y) -> list(X * Y)
 
