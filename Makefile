@@ -10,7 +10,7 @@ MAVEN_OPTS   = "-Xms512m -Xmx1024m -Xss16m"
 MAVEN        = MAVEN_OPTS=$(MAVEN_OPTS) mvn
 SUNSHINE     = java -jar $(SUNSHINE_JAR)
 PARSE_JAVA   = $(SUNSHINE) parse -l lib/java.spfx/lang.java -p . -i 
-STATIX       = ../ministatix.hs.git/statix $(SPEC)
+STATIX       = statix $(SPEC)
 JAVAC        = javac
 
 JAVA_TESTS   = $(shell find $(TESTS) -name '*.java')
