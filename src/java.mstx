@@ -58,7 +58,10 @@ type-parameters-ok(s, typeParameters, tps) :- typeParameters match
   }.
 
 type-parameter-ok(s, typeParameter, tp) :- typeParameter match
-  { TypeParameter(bounds, name) -> new tp -> name }.
+  { TypeParameter(bounds, name) ->
+      new tp -> name
+    , s -[ `GEN ]-> tp
+  }.
 
 // interface-declaration-ok : scope * InterfaceDeclaration
 
@@ -71,7 +74,7 @@ interface-declaration-ok(s, id) :- id match
     , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
   }. 
 
-// maybe-superclass-ok maps super-class-ok(*, list(*), *)
+// maybe-super-class-ok maps super-class-ok(*, list(*), *)
 
 maybe-super-class-ok(s, sc, s_this) :- sc match
   { None()   -> true
@@ -385,8 +388,12 @@ unann-reference-type-ok(s, urt, ty) :- urt match
 // unann-class-type-ok : scope * UnannClassType
 
 unann-class-type-ok(s, urt, ty) :- urt match
-  { ClassType(id, maybeTypeArguments) ->
-      true // TODO
+  { ClassType(id, maybeTypeArguments) -> {gens, matches, p, gen}
+      query s `LEX*`GENERICS`GEN as gens
+    , filter gens (name where name = id) matches
+    , only(matches, p)
+    , datum(p, gen)
+    , ty = GEN(gen)
   | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) ->
       true // TODO
   }.
