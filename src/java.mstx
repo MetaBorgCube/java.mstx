@@ -204,7 +204,7 @@ method-declaration-ok(s, md) :- md match
   { MethodDecl(methodModifiers, methodHeader, methodBody) -> {s_method, decl}
       new s_method -> decl
     , s_method -[ `LEX ]-> s
-    , method-header-ok(s_method, methodHeader, decl) // TODO Hendrik is this OK? (changed s to s_method)
+    , method-header-ok(s_method, methodHeader, decl)
     , method-body-ok(s_method, methodBody)
   }.
 
@@ -289,11 +289,11 @@ interface-member-declaration-ok(s, imd) :- imd match
   }.
 
 interface-method-declaration-ok(s, imd) :- imd match
-  { AbstractMethodDec(interfaceMethodModifiers, methodHeader, methodBody) -> {s_method}
-      new s_method
+  { AbstractMethodDec(interfaceMethodModifiers, methodHeader, methodBody) -> {s_method decl}
+      new s_method -> decl
     , s_method -[ `LEX ]-> s
+    , method-header-ok(s_method, methodHeader, decl)
     , method-body-ok(s_method, methodBody)
-    , true // TODO
   }.
 
 // block-ok : scope * Block
