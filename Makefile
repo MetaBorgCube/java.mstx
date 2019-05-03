@@ -9,9 +9,14 @@ MAVEN        = MAVEN_OPTS=$(MAVEN_OPTS) mvn
 SUNSHINE     = java -jar $(SUNSHINE_JAR)
 PARSE_JAVA   = $(SUNSHINE) parse -l lib/java.spfx/lang.java -p . -i 
 
+SPEC        = src/java.mstx
+STATIX      = ../ministatix.hs.git/statix $(SPEC)
 TESTS       = tests/
 JAVA_TESTS  = $(shell find $(TESTS) -name '*.java')
-ATERM_TESTS = $(JAVA_TESTS:%.java=%.aterm)
+TEST_OUTS   = $(JAVA_TESTS:%.java=%.out)
+
+
+.PHONY: all test
 
 ## Default target
 
@@ -34,22 +39,24 @@ lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-language:
 	cd $(JAVA_FRONT) && $(MAVEN) verify
 
 # ensure the java spoofax language frontend is compiled and available
-javafront: lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-language sunshine
+javafront: lib/java.spfx/lang.java/ #target/lang.java-1.1.0-SNAPSHOT.spoofax-language sunshine
 
 ## Testing
 
-%.jav: %.java
-	cp $< $@
-
-# Turn a jav file into its aterm representation
+# Turn a java file into its aterm representation
 # using the Spoofax syntax definition
-%.aterm: %.jav javafront
-	$(PARSE_JAVA) $< > $@
+%.aterm: %.java
+	cp $< $(<:%.java=%.jav)
+	$(PARSE_JAVA) $(<:%.java=%.jav) > $@
+	rm -f $(<:%.java=%.jav)
 
 %.javac: %.java
 	javac $<
 
-test: javafront $(ATERM_TESTS)
+%.out: %.aterm
+	$(STATIX) $< > $@ || true
+
+test: $(TEST_OUTS)
 
 ## Building
 
@@ -57,5 +64,5 @@ test: javafront $(ATERM_TESTS)
 
 test-clean:
 	find -iname "*.class" -exec rm {} \;
-	find -iname "*.jav"   -exec rm {} \;
 	find -iname "*.aterm" -exec rm {} \;
+	find -iname "*.out"   -exec rm {} \;
