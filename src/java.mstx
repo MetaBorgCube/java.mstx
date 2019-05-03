@@ -29,9 +29,8 @@ class-declaration-ok(s, cd) :- cd match
 
 normal-class-declaration-ok(s, ncd) :- ncd match
   { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations) -> {s_cls}
-      new s_cls
+      new s_cls -> (id, CLASS(s_cls))
     , s_cls -[ `LEX ]-> s
-    , s_cls -> Pair(id, CLASS(s_cls))
     , s -[ `TYPE ]-> s_cls
     , maybe-super-class-ok(s, maybeSuperClass, s_cls)
     , maybe-super-interfaces-ok(s, maybeSuperInterfaces, s_cls)
@@ -42,9 +41,8 @@ normal-class-declaration-ok(s, ncd) :- ncd match
 
 interface-declaration-ok(s, id) :- id match
   { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> {s_intf}
-      new s_intf
+      new s_intf -> (id, INTF(s_intf))
     , s_intf -[ `LEX ]-> s
-    , s_intf -> Pair(id, INTF(s_intf))
     , s -[ `TYPE ]-> s_intf
     , maybe-extends-interfaces-ok(s, maybeExtendsInterfaces, s_intf)
     , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
@@ -97,7 +95,7 @@ implement-interface(i, s_this) :- i match
 // class-body-declarations-ok maps class-body-declaration-ok(*, list(*))
 
 class-body-declarations-ok(s, cbds) :- cbds match
-  { []   -> true
+  { []       -> true
   | cbd:cbds -> class-body-declaration-ok(s, cbd), class-body-declarations-ok(s, cbds)
   }.
 
@@ -162,7 +160,7 @@ extends-interfaces-ok(s, ei, s_this) :- ei match
 // interface-member-declarations-ok maps interface-member-declaration-ok(*, list(*))
 
 interface-member-declarations-ok(s, imds) :- imds match
-  { []   -> true
+  { []       -> true
   | imd:imds -> interface-member-declaration-ok(s, imd), interface-member-declarations-ok(s, imds)
   }.
 
@@ -214,7 +212,7 @@ block-statements-ok(s, bs) :- bs match
 class-types-ok(s, cts, tys) :- {ct-ty-s}
   zip(cts, tys, ct-ty-s)
 , ct-ty-s match
-  { Pair(ct, ty) -> class-type-ok(s, ct, ty)
+  { (ct, ty) -> class-type-ok(s, ct, ty)
   }.
 
 // class-type-ok : scope * ClassType -> TYPE
@@ -230,16 +228,16 @@ class-type-ok(s, ct, ty) :- ct match
   }.
 
 one-class-type(reached, id, ty) :- {matched, visible, p}
-  filter reached (Pair(id', ty') where id' = id) matched
+  filter reached ((id', ty') where id' = id) matched
 , min matched lexico(`TYPE < `LEX) visible
 , only(visible, p)
-, datum(p, Pair(id, ty)).
+, datum(p, (id, ty)).
 
 // zip : list(X) * list(Y) -> list(X * Y)
 
-zip(xs,ys,xys) :- Pair(xs, ys) match
-  { Pair([], [])     -> xys = []
-  | Pair(x:xs, y:ys) -> {xys2} xys = Pair(x,y):xys2, zip(xs, ys, xys2)
+zip(xs,ys,xys) :- (xs, ys) match
+  { ([], [])     -> xys = []
+  | (x:xs, y:ys) -> {xys2} xys = (x,y):xys2, zip(xs, ys, xys2)
   }.
 
 // ----------------
