@@ -9,6 +9,14 @@ MAVEN        = MAVEN_OPTS=$(MAVEN_OPTS) mvn
 SUNSHINE     = java -jar $(SUNSHINE_JAR)
 PARSE_JAVA   = $(SUNSHINE) parse -l lib/java.spfx/lang.java -p . -i 
 
+TESTS       = tests/
+JAVA_TESTS  = $(shell find $(TESTS) -name '*.java')
+ATERM_TESTS = $(JAVA_TESTS:%.java=%.aterm)
+
+## Default target
+
+all: test
+
 ## Get depenencies
 
 bin:
@@ -41,7 +49,7 @@ javafront: lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-langu
 %.javac: %.java
 	javac $<
 
-test: javafront
+test: javafront $(ATERM_TESTS)
 
 ## Building
 
