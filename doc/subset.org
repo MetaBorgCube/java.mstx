@@ -12,6 +12,10 @@
   from which interesting namebinding and disambiguation problems arise.
 - *Overloading*
   Because there is an obvious interplay between type-checking and namebinding here.
+- *Casts*
+  Because it influences name resolution for inner definitions.
+- *New inner class syntax*
+  I.e. `A a = new A(); a.new B()` where B is an inner class of A.
 
 ** Blacklistes Language Features
    

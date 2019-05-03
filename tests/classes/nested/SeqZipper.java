@@ -49,5 +49,3 @@ class Test {
 	    zipper.zip(nums);
     }
 }
-
-

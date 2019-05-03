@@ -4,3 +4,79 @@
 ** Classes (Section 8)
    
 Inner classes are nested classes that are *not static*.
+therefore are not inherited.
+
+*** Constructors
+
+    #+BEGIN_QUOTE
+    [pg 276]
+    It is possible for a constructor to be generic independently of whether the class the
+constructor is declared in is itself generic.
+    #+END_QUOTE
+    
+    See page 279 for super constructor calls typechecks.
+
+*** Naming of fields
+
+    #+BEGIN_QUOTE
+    [pg 223]
+    Fields, methods, and member types of a class type may have the same name,
+    since they are used in different contexts and are disambiguated by different lookup
+    procedures (§6.5). However, this is discouraged as a matter of style.
+    #+END_QUOTE
+    
+
+    #+BEGIN_QUOTE
+    [pg 229]
+    If a class declares a field with a certain name, then the declaration of that field is
+    said to hide any and all accessible declarations of fields with the same name in
+    superclasses, and superinterfaces of the class.
+    
+    [...]
+
+    A hidden field can be accessed by using a qualified name (§6.5.6.2) if it is static ,
+    or by using a field access expression that contains the keyword super (§15.11.2)
+    or a cast to a superclass type.
+    
+    [...]
+
+    It is possible for a class to inherit more than one field with the same name, either
+    from its superclass and superinterfaces or from its superinterfaces alone. Such a
+    situation does not in itself cause a compile-time error. However, any attempt within
+    the body of the class to refer to any such field by its simple name will result in a
+    compile-time error, because the reference is ambiguous.
+    #+END_QUOTE
+
+*** Naming for methods
+    #+BEGIN_QUOTE
+    It is a compile-time error for a method or constructor to declare two formal
+    parameters with the same name. (That is, their declarations mention the same
+    #+END_QUOTE
+
+*** Typing of class members
+
+    #+BEGIN_QUOTE
+    [pg 223]
+    We use the phrase the type of a member to denote:
+
+    • For a field, its type.
+    • For a method, an ordered 4-tuple consisting of:
+
+    - type parameters: the declarations of any type parameters of the method member.
+    - argument types: a list of the types of the arguments to the method member.
+    - return type: the return type of the method member.
+    - throws clause: exception types declared in the throws clause of the method member.
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    It is a compile-time error to declare two constructors with override-equivalent
+    #+END_QUOTE
+
+*** Inner classes
+
+    #+BEGIN_QUOTE
+    [8.8.1]
+    The constructor of a non- private inner member class implicitly declares, as the
+    first formal parameter, a variable representing the immediately enclosing instance
+    of the class (§15.9.2, §15.9.3).
+    #+END_QUOTE
