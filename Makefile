@@ -2,21 +2,24 @@
 JAVA_FRONT   = lib/java.spfx/lang.java/
 SUNSHINE_URL = http://artifacts.metaborg.org/service/local/repositories/releases/content/org/metaborg/org.metaborg.sunshine2/2.5.2/org.metaborg.sunshine2-2.5.2.jar
 SUNSHINE_JAR = bin/org.metaborg.sunshine2-2.5.2.jar
+SPEC         = src/java.mstx
+TESTS        = tests/
 
 ## external commands with configuration
 MAVEN_OPTS   = "-Xms512m -Xmx1024m -Xss16m"
 MAVEN        = MAVEN_OPTS=$(MAVEN_OPTS) mvn
 SUNSHINE     = java -jar $(SUNSHINE_JAR)
 PARSE_JAVA   = $(SUNSHINE) parse -l lib/java.spfx/lang.java -p . -i 
+STATIX       = ../ministatix.hs.git/statix $(SPEC)
+JAVAC        = javac
 
-SPEC        = src/java.mstx
-STATIX      = ../ministatix.hs.git/statix $(SPEC)
-TESTS       = tests/
-JAVA_TESTS  = $(shell find $(TESTS) -name '*.java')
-TEST_OUTS   = $(JAVA_TESTS:%.java=%.out)
+JAVA_TESTS   = $(shell find $(TESTS) -name '*.java')
 
+STX_TEST_TARGETS = $(JAVA_TESTS:%.java=%.stx.out)
+JVC_TEST_TARGETS = $(JAVA_TESTS:%.java=%.javac.out)
 
 .PHONY: all test
+.PRECIOUS: %.aterm
 
 ## Default target
 
@@ -53,10 +56,13 @@ javafront: lib/java.spfx/lang.java/ #target/lang.java-1.1.0-SNAPSHOT.spoofax-lan
 %.javac: %.java
 	javac $<
 
-%.out: %.aterm
-	$(STATIX) $< > $@ || true
+%.stx.out: %.aterm
+	$(STATIX) $< > $@ 2>&1 || true
 
-test: $(TEST_OUTS)
+%.javac.out: %.java
+	$(JAVAC) $< &> $@ 2>&1 || true
+
+test: $(STX_TEST_TARGETS) $(JVC_TEST_TARGETS)
 
 ## Building
 
