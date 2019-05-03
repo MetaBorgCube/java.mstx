@@ -102,18 +102,20 @@ class-types-ok(s, cts, tys) :- {ct-ty-s}
 // class-type-ok : scope * ClassType -> TYPE
 
 class-type-ok(s, ct, ty) :- ct match
-  { ClassType(annotations, id, maybeTypeArguments) -> {reached, matched, visible}
+  { ClassType(annotations, id, maybeTypeArguments) -> {reached}
       query s `LEX*`IMPORT*`TYPE as reached
-    , filter reached (Pair(id', ty') where id' = id) matched
-    , min matched lexico(`TYPE < `LEX) visible
-    , {p} only(visible, p)
-    , datum(p, Pair(id, ty))
-  | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s_imp, s_cls}
+    , one-class-type(reached, id, ty)
+  | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s_cls, reached}
       class-type-ok(s, classType, CLASS(s_cls))
-    , new s_imp
-    , s_imp -[ `IMPORT ]-> s_cls
-    , class-type-ok(s_imp, ClassType(annotations, id, maybeTypeArguments), ty)
+    , query s `TYPE as reached
+    , one-class-type(reached, id, ty)
   }.
+
+one-class-type(reached, id, ty) :- {matched, visible, p}
+  filter reached (Pair(id', ty') where id' = id) matched
+, min matched lexico(`TYPE < `LEX) visible
+, only(visible, p)
+, datum(p, Pair(id, ty)).
 
 // zip : list(X) * list(Y) -> list(X * Y)
 
