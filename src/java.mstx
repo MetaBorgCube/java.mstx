@@ -118,27 +118,99 @@ class-member-declaration-ok(s, cmd) :- cmd match
 // field-declaration-ok : scope * FieldDeclaration
 
 field-declaration-ok(s, fd) :- fd match
-  { FieldDecl(fieldModifiers, unannType, varDecls) ->
+  { FieldDecl(fieldModifiers, unannType, varDecls) -> {ty}
+      unann-type-ok(s, unannType, ty)
+    , var-decls-ok(s, varDecls)
+    , true // TODO
+  }.
+
+// var-decl-id-ok : scope * VarDeclId
+
+var-decl-id-ok(s, vdi) :- vdi match
+  { VariableDecl(id) ->
       true // TODO
+  }.
+
+// var-decls-ok : scope * list(VarDecl)
+
+var-decls-ok(s, vds) :- vds match
+  { []     -> true
+  | vd:vds -> var-decl-ok(s, vd), var-decls-ok(s, vds)
+  }.
+
+// var-decl-ok : scope * VarDecl
+
+var-decl-ok(s, vd) :- vd match
+  { VariableDeclInit(vdi, vi) ->
+      var-decl-id-ok(s, vdi)
+    , true // TODO
+  | VD2VDI(vdi) ->
+      var-decl-id-ok(s, vdi)
+  }.
+
+// variable-initializer-ok : scope * VariableInitializer
+
+variable-initializer-ok(s, vi) :- vi match
+  { VI2E(e) -> {ty}
+      expression-ok(s, e, ty)
   }.
 
 // method-declaration-ok : scope * MethodDeclaration
 
 method-declaration-ok(s, md) :- md match
-  { MethodDecl(methodModifiers, methodHeader, methodBody) -> {s_method}
-      new s_method
+  { MethodDecl(methodModifiers, methodHeader, methodBody) -> {s_method, decl}
+      new s_method -> decl
     , s_method -[ `LEX ]-> s
+    , method-header-ok(s, methodHeader, decl)
     , method-body-ok(s_method, methodBody)
+  }.
+
+// method-header-ok : scope * MethodHeader * (Id, Type)
+
+method-header-ok(s, mh, decl) :- mh match
+  { MethodHeader(result, id, formalParams, annotatedDimsEmpty, maybeThrows) -> {ty, tys}
+      decl = (id, METHOD(ty, tys))
+    , true // TODO
+    , result-ok(s, result, ty)
+  }.
+
+// result-ok : scope * Result * tys * ty
+
+result-ok(s, r, ty) :- r match
+  { R2UT(ut) -> unann-type-ok(s, ut, ty)
+  | Void()   -> ty = VOID()
+  }.
+
+// formal-params-ok : scope * FormalParams
+
+formal-params-ok(s, fps, tys) :- fps match
+  { NoParams() ->
+      tys = []
+  | SingleParam(lfp) -> {ty}
+      last-formal-param-ok(s, lfp, ty)
+    , tys = ty:[]
+  | ParamList([], lfp) ->
+      formal-params-ok(s, SingleParam(lfp), tys)
+  | ParamList(fp:fps, lfp) -> {ty, tys'}
+      formal-param-ok(s, fp, ty)
+    , formal-params-ok(s, ParamList(fps, lfp), tys')
+    , tys = ty:tys'
+  }.
+
+last-formal-param-ok(s, lfp, ty) :- lfp match
+  { LFP2FP(fp) -> formal-param-ok(s, fp, ty)
+  }.
+
+formal-param-ok(s, fp, ty) :- fp match
+  { FormalParam(variableModifiers, unannType, varDeclId) ->
+      unann-type-ok(s, unannType, ty)
     , true // TODO
   }.
 
-method-header-ok(s, mh) :- mh match
-  { MethodHeader(result, id, formalParams, annotatedDimsEmpty, maybeThrows) ->
-      true // TODO
-  }.
+// method-body-ok : scope * MethodBody
 
 method-body-ok(s, mb) :- mb match
-  { Block(v1) -> block-ok(s, mb)
+  { MB2B(b)        -> block-ok(s, b)
   | NoMethodBody() -> true
   }.
 
@@ -185,7 +257,7 @@ interface-method-declaration-ok(s, imd) :- imd match
 
 block-ok(s, b) :- b match
   { Block(blockStatements) ->
-      true // TODO
+      block-statements-ok(s, blockStatements)
   }.
 
 // block-statements-ok : scope * BlockStatement
@@ -200,12 +272,17 @@ block-statements-ok(s, bs) :- bs match
   | BS2CD(cd):bs -> {s_blk}
       new s_blk
     , s_blk -[ `LEX ]-> s
-    , true // TODO; are classes in a block sequential?
+    , class-declaration-ok(s_blk, cd)
     , block-statements-ok(s_blk, bs)
   | BS2S(s):bs ->
       true // TODO
     , block-statements-ok(s, bs)
   }.
+
+// expression-ok : scope * Expression * Type
+
+expression-ok(s, e, ty) :-
+  true. // TODO
 
 // class-types-ok maps class-type-ok(*, list(*)) = list(*)
 
@@ -232,6 +309,47 @@ one-class-type(reached, id, ty) :- {matched, visible, p}
 , min matched lexico(`TYPE < `LEX) visible
 , only(visible, p)
 , datum(p, (id, ty)).
+
+// unann-type-ok : scope * UnannType
+
+unann-type-ok(s, ut, ty) :- ut match
+  { UT2UPT(upt) -> unann-primitive-type-ok(s, upt, ty)
+  | UT2URT(urt) -> unann-reference-type-ok(s, urt, ty)
+  }.
+
+// unann-primitive-type-ok : scope * UnannPrimitiveType
+
+unann-primitive-type-ok(s, upt, ty) :- upt match
+  { NumericType(nt) -> numeric-type-ok(s, nt, ty)
+  | BooleanType()   -> ty = BOOLEAN()
+  }.
+
+// unann-reference-type-ok : scope * UnannReferenceType
+
+unann-reference-type-ok(s, urt, ty) :- urt match
+  { URT2UCT(uct) -> unann-class-type-ok(s, uct, ty)
+  }.
+
+// unann-class-type-ok : scope * UnannClassType
+
+unann-class-type-ok(s, urt, ty) :- urt match
+  { ClassType(id, maybeTypeArguments) ->
+      true // TODO
+  | ClassOrInterfaceType(unannClassType, annotations, id, maybeTypeArguments) ->
+      true // TODO
+  }.
+
+// numeric-type-ok : scope * NumericType
+
+numeric-type-ok(s, nt, ty) :- nt match
+  { Byte()   -> ty = BYTE()
+  | Short()  -> ty = SHORT()
+  | Int()    -> ty = INT()
+  | Long()   -> ty = LONG()
+  | Char()   -> ty = CHAR()
+  | Float()  -> ty = FLOAT()
+  | Double() -> ty = DOUBLE()
+  }.
 
 // zip : list(X) * list(Y) -> list(X * Y)
 
