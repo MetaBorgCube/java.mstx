@@ -15,8 +15,7 @@ JAVAC        = javac
 
 JAVA_TESTS   = $(shell find $(TESTS) -name '*.java')
 
-STX_TEST_TARGETS = $(JAVA_TESTS:%.java=%.stx.out)
-JVC_TEST_TARGETS = $(JAVA_TESTS:%.java=%.javac.out)
+TEST_TARGETS = $(JAVA_TESTS:%.java=%.result)
 
 .PHONY: all test
 .PRECIOUS: %.aterm
@@ -38,11 +37,11 @@ bin/org.metaborg.sunshine2-2.5.2.jar: bin
 sunshine: bin/org.metaborg.sunshine2-2.5.2.jar
 
 # compile the java frontend
-lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-language:
+lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-language: lib/java.spfx/lang.java/
 	cd $(JAVA_FRONT) && $(MAVEN) verify
 
 # ensure the java spoofax language frontend is compiled and available
-javafront: lib/java.spfx/lang.java/ #target/lang.java-1.1.0-SNAPSHOT.spoofax-language sunshine
+javafront: lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-language sunshine
 
 ## Testing
 
@@ -53,16 +52,10 @@ javafront: lib/java.spfx/lang.java/ #target/lang.java-1.1.0-SNAPSHOT.spoofax-lan
 	$(PARSE_JAVA) $(<:%.java=%.jav) > $@
 	rm -f $(<:%.java=%.jav)
 
-%.javac: %.java
-	javac $<
+%.result: %.java src/
+	@./tests/run $< | tee $@ | grep -i "running\|failure\|success"
 
-%.stx.out: %.aterm
-	$(STATIX) $< > $@ 2>&1 || true
-
-%.javac.out: %.java
-	$(JAVAC) $< &> $@ 2>&1 || true
-
-test: $(STX_TEST_TARGETS) $(JVC_TEST_TARGETS)
+test: $(TEST_TARGETS)
 
 ## Building
 
@@ -71,4 +64,4 @@ test: $(STX_TEST_TARGETS) $(JVC_TEST_TARGETS)
 test-clean:
 	find -iname "*.class" -exec rm {} \;
 	find -iname "*.aterm" -exec rm {} \;
-	find -iname "*.out"   -exec rm {} \;
+	find -iname "*.result" -exec rm {} \;

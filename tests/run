@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
-readonly ATERM="java -jar ../bin/org.metaborg.sunshine2-2.5.2.jar parse -l ../lib/java.spfx/lang.java -p . -i"
+readonly DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+readonly ATERM="java -jar $DIR/../bin/org.metaborg.sunshine2-2.5.2.jar parse -l $DIR/../lib/java.spfx/lang.java -p . -i"
 
 for infile in "$@"
 do
@@ -11,8 +12,8 @@ do
 
 	jav=${infile%.java}.jav
 	cp ${infile} $jav
-	${ATERM} ${infile%.java}.jav > ${infile%.java}.aterm
-	statix ../src/java.mstx ${infile%.java}.aterm 2>&1 | tee ${infile%.java}.stx.out
+	${ATERM} ${infile%.java}.jav > ${infile%.java}.aterm 2> /dev/null
+	statix $DIR/../src/java.mstx ${infile%.java}.aterm 2>&1 | tee ${infile%.java}.stx.out
 	stx_ok=${PIPESTATUS[0]}
 
 	if [ $java_ok -eq $stx_ok ]
