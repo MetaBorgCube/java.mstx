@@ -1,7 +1,7 @@
 main(tm) :- tm match
   { CompilationUnit(pkgDecl, imports, typeDecls) -> {s}
-      new s,
-      type-declarations-ok(s, typeDecls)
+      new s
+    , type-declarations-ok(s, typeDecls)
   }.
 
 // type-declarations-ok maps type-declaration-ok(*, list(*))
@@ -14,6 +14,20 @@ type-declarations-ok(s, tds) :- tds match
 // type-declaration-ok : scope * TypeDeclaration
 
 type-declaration-ok(s, td) :- td match
+  { TD2CD(cd) -> class-declaration-ok(s, cd)
+  | TD2ID(id) -> interface-declaration-ok(s, id)
+  | SemiColon() -> true
+  }.
+
+// class-declaration-ok : scope * ClassDeclaration
+
+class-declaration-ok(s, cd) :- cd match
+  { CD2NCD(ncd) -> normal-class-declaration-ok(s, ncd)
+  }.
+
+// normal-class-declaration-ok : scope * NormalClassDeclaration
+
+normal-class-declaration-ok(s, ncd) :- ncd match
   { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations) -> {s_cls}
       new s_cls
     , s_cls -[ `LEX ]-> s
@@ -21,15 +35,19 @@ type-declaration-ok(s, td) :- td match
     , s -[ `TYPE ]-> s_cls
     , maybe-super-class-ok(s, maybeSuperClass, s_cls)
     , maybe-super-interfaces-ok(s, maybeSuperInterfaces, s_cls)
-    , type-declarations-ok(s_cls, classBodyDeclarations) // FIXME
-  | NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> {s_intf}
+    , class-body-declarations-ok(s_cls, classBodyDeclarations)
+  }. 
+
+// interface-declaration-ok : scope * InterfaceDeclaration
+
+interface-declaration-ok(s, id) :- id match
+  { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> {s_intf}
       new s_intf
     , s_intf -[ `LEX ]-> s
     , s_intf -> Pair(id, INTF(s_intf))
     , s -[ `TYPE ]-> s_intf
     , maybe-extends-interfaces-ok(s, maybeExtendsInterfaces, s_intf)
-    , type-declarations-ok(s_intf, interfaceMemberDeclarations) // FIXME
-  | lala -> true // FIXME remove after fixing recursive call above
+    , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
   }. 
 
 // maybe-superclass-ok maps super-class-ok(*, list(*), *)
@@ -66,7 +84,7 @@ super-interfaces-ok(s, si, s_this) :- si match
 
 implement-interfaces(is, s_this) :- is match
   { []   -> true
-  | i:is -> implement-interface(i, s_this)
+  | i:is -> implement-interface(i, s_this), implement-interfaces(is, s_this)
   }.
 
 // implement-interface : TYPE * scope
@@ -74,6 +92,56 @@ implement-interfaces(is, s_this) :- is match
 implement-interface(i, s_this) :- i match
   { INTF(s_intf) ->
       s_this -[ `IMPL ]-> s_intf
+  }.
+
+// class-body-declarations-ok maps class-body-declaration-ok(*, list(*))
+
+class-body-declarations-ok(s, cbds) :- cbds match
+  { []   -> true
+  | cbd:cbds -> class-body-declaration-ok(s, cbd), class-body-declarations-ok(s, cbds)
+  }.
+
+// class-body-declaration-ok : scope * ClassBodyDeclaration
+
+class-body-declaration-ok(s, cbd) :- cbd match
+  { CBD2CMD(cmd) -> class-member-declaration-ok(s, cmd)
+  }.
+
+// class-member-declaration-ok : scope * ClassMemberDeclaration
+
+class-member-declaration-ok(s, cmd) :- cmd match
+  { CMD2FD(fd) -> field-declaration-ok(s, fd)
+  | CMD2MD(md) -> method-declaration-ok(s, md)
+  | CMD2CD(cd) -> class-declaration-ok(s, cd)
+  | CMD2ID(id) -> interface-declaration-ok(s, id)
+  | SemiColon() -> true
+  }.
+
+// field-declaration-ok : scope * FieldDeclaration
+
+field-declaration-ok(s, fd) :- fd match
+  { FieldDecl(fieldModifiers, unannType, varDecls) ->
+      true // TODO
+  }.
+
+// method-declaration-ok : scope * MethodDeclaration
+
+method-declaration-ok(s, md) :- md match
+  { MethodDecl(methodModifiers, methodHeader, methodBody) -> {s_method}
+      new s_method
+    , s_method -[ `LEX ]-> s
+    , method-body-ok(s_method, methodBody)
+    , true // TODO
+  }.
+
+method-header-ok(s, mh) :- mh match
+  { MethodHeader(result, id, formalParams, annotatedDimsEmpty, maybeThrows) ->
+      true // TODO
+  }.
+
+method-body-ok(s, mb) :- mb match
+  { Block(v1) -> block-ok(s, mb)
+  | NoMethodBody() -> true
   }.
 
 // maybe-extendsinterfaces-ok maps extends-interfaces-ok(*, list(*))
@@ -89,6 +157,56 @@ extends-interfaces-ok(s, ei, s_this) :- ei match
   { ExtendsInterfaces(classTypes) -> {types}
       class-types-ok(s, classTypes, types)
     , implement-interfaces(types, s_this)
+  }.
+
+// interface-member-declarations-ok maps interface-member-declaration-ok(*, list(*))
+
+interface-member-declarations-ok(s, imds) :- imds match
+  { []   -> true
+  | imd:imds -> interface-member-declaration-ok(s, imd), interface-member-declarations-ok(s, imds)
+  }.
+
+// interface-member-declaration-ok : scope * InterfaceMemberDeclaration
+
+interface-member-declaration-ok(s, imd) :- imd match
+  { IMD2IMD(imd) -> interface-method-declaration-ok(s, imd)
+  | IMD2CD(cd) -> class-declaration-ok(s, cd)
+  | IMD2ID(id) -> interface-declaration-ok(s, id)
+  | SemiColon() -> true
+  }.
+
+interface-method-declaration-ok(s, imd) :- imd match
+  { AbstractMethodDec(interfaceMethodModifiers, methodHeader, methodBody) -> {s_method}
+      new s_method
+    , s_method -[ `LEX ]-> s
+    , method-body-ok(s_method, methodBody)
+    , true // TODO
+  }.
+
+// block-ok : scope * Block
+
+block-ok(s, b) :- b match
+  { Block(blockStatements) ->
+      true // TODO
+  }.
+
+// block-statements-ok : scope * BlockStatement
+
+block-statements-ok(s, bs) :- bs match
+  { [] -> true
+  | BS2LVSD(lvsd):bs -> {s_blk}
+      new s_blk
+    , s_blk -[ `LEX ]-> s
+    , true // TODO
+    , block-statements-ok(s_blk, bs)
+  | BS2CD(cd):bs -> {s_blk}
+      new s_blk
+    , s_blk -[ `LEX ]-> s
+    , true // TODO; are classes in a block sequential?
+    , block-statements-ok(s_blk, bs)
+  | BS2S(s):bs ->
+      true // TODO
+    , block-statements-ok(s, bs)
   }.
 
 // class-types-ok maps class-type-ok(*, list(*)) = list(*)
