@@ -289,7 +289,7 @@ interface-member-declaration-ok(s, imd) :- imd match
   }.
 
 interface-method-declaration-ok(s, imd) :- imd match
-  { AbstractMethodDec(interfaceMethodModifiers, methodHeader, methodBody) -> {s_method decl}
+  { AbstractMethodDec(interfaceMethodModifiers, methodHeader, methodBody) -> {s_method, decl}
       new s_method -> decl
     , s_method -[ `LEX ]-> s
     , method-header-ok(s_method, methodHeader, decl)
@@ -402,14 +402,19 @@ unann-reference-type-ok(s, urt, ty) :- urt match
 // unann-class-type-ok : scope * UnannClassType
 
 unann-class-type-ok(s, urt, ty) :- urt match
-  { ClassType(id, maybeTypeArguments) -> {gens, matches, p, gen}
+  { ClassType(id, maybeTypeArguments) -> {reached}
+      query s `LEX*`IMPORT*`TYPE as reached
+    , one-class-type(reached, id, ty)
+    , {gens, matches, p, gen}
       query s `LEX*`GENERICS`GEN as gens
     , filter gens ((name, _) where name = id) matches
     , only(matches, p)
     , datum(p, gen)
     , ty = GEN(gen)
-  | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) ->
-      true // TODO
+  | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {s_cls, reached}
+      unann-class-type-ok(s, unannClassType, CLASS(s_cls))
+    , query s `TYPE as reached
+    , one-class-type(reached, id, ty)
   }.
 
 // numeric-type-ok : scope * NumericType
@@ -426,8 +431,11 @@ numeric-type-ok(s, nt, ty) :- nt match
 
 // sub-type : Type * Type
 
-sub-type(ty1, ty2) :-
-  true. // TODO
+sub-type(ty1, ty2) :- (ty1, ty2) match
+  { (ty, ty) -> true
+  | (CLASS(s_cls1), CLASS(s_cls2)) ->
+      true // TODO
+  }.
 
 // zip : list(X) * list(Y) -> list(X * Y)
 
