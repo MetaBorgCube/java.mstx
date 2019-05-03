@@ -1,4 +1,6 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
+
+set -eu
 
 readonly DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 readonly ATERM="java -jar $DIR/../bin/org.metaborg.sunshine2-2.5.2.jar parse -l $DIR/../lib/java.spfx/lang.java -p . -i"

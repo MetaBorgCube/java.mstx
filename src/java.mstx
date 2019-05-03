@@ -433,15 +433,15 @@ numeric-type-ok(s, nt, ty) :- nt match
 
 sub-type(ty1, ty2) :- (ty1, ty2) match
   { (ty, ty) -> true
-  | (INTF(s_intf1), INTF(s_intf2)) -> {reached matched p}
+  | (INTF(s_intf1), INTF(s_intf2)) -> {reached, matched, p}
       query s_intf1 `IMPL* as reached
     , filter reached ((_, INTF(s_intf)) where s_intf = s_intf2) matched
     , only(matched, p)
-  | (CLASS(s_cls1), CLASS(s_cls2)) -> {reached matched p}
+  | (CLASS(s_cls1), CLASS(s_cls2)) -> {reached, matched, p}
       query s_cls1 `EXT* as reached
     , filter reached ((_, CLASS(s_cls)) where s_cls = s_cls2) matched
     , only(matched, p)
-  | (CLASS(s_cls1), INTF(s_intf2)) -> {reached matched p}
+  | (CLASS(s_cls1), INTF(s_intf2)) -> {reached, matched, p}
       query s_cls1 `EXT*`IMPL* as reached
     , filter reached ((_, INTF(s_intf)) where s_intf = s_intf2) matched
     , only(matched, p)
