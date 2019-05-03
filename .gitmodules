@@ -1,3 +1,4 @@
 [submodule "lib/java.spfx"]
 	path = lib/java.spfx
 	url = git@github.com:metaborg/java-front.git
+    branch = statix
