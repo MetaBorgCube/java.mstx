@@ -384,6 +384,9 @@ expression-ok(s, e, ty) :- e match
       false // TODO
   | E2L(literal) ->
       literal-ok(s, literal, ty)
+  | E2EN(en) -> {p}
+      expression-name-ok(s, en, p)
+    , datum(p, (_, ty))
   }.
 
 lhs-ok(s, lhs, ty) :- lhs match
@@ -554,7 +557,7 @@ class-types-ok(s, cts, tys) :- {ct-ty-s}
 
 class-type-ok(s, ct, ty) :- ct match
   { ClassType(annotations, id, maybeTypeArguments) -> {reached}
-      query s `LEX*`IMPORT*`EXT*`IMP*`TYPE as reached // TODO IMPORT* ?!
+      query s `LEX*`EXT*`IMPL*`TYPE as reached
     , one-class-type(reached, id, ty)
   | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s_cls, reached}
       class-type-ok(s, classType, CLASS(s_cls))
@@ -564,7 +567,13 @@ class-type-ok(s, ct, ty) :- ct match
 
 one-class-type(reached, id, ty) :- {matched, visible, p}
   filter reached ((id', _) where id' = id) matched
-, min matched lexico(`TYPE < `LEX) visible
+, min matched
+      lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
+            , `EXT < `LEX, `EXT < `IMPL
+            , `EXT < `IMPL
+            )
+      visible
+
 , only(visible, p)
 , datum(p, (_, ty)).
 
@@ -592,14 +601,15 @@ unann-reference-type-ok(s, urt, ty) :- urt match
 
 unann-class-type-ok(s, urt, ty) :- urt match
   { ClassType(id, maybeTypeArguments) -> {reached}
-      query s `LEX*`IMPORT*`TYPE as reached
+      query s `LEX*`EXT*`IMPL*`TYPE as reached
     , one-class-type(reached, id, ty)
-    , {gens, matches, p, gen}
-      query s `LEX*`GENERICS`GEN as gens
-    , filter gens ((name, _) where name = id) matches
-    , only(matches, p)
-    , datum(p, gen)
-    , ty = GEN(gen)
+    // TODO currently fails
+    //, {gens, matches, p, gen}
+    //  query s `LEX*`GENERICS`GEN as gens
+    //, filter gens ((name, _) where name = id) matches
+    //, only(matches, p)
+    //, datum(p, gen)
+    //, ty = GEN(gen)
   | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {s_cls, reached}
       unann-class-type-ok(s, unannClassType, CLASS(s_cls))
     , query s `TYPE as reached
