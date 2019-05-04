@@ -18,8 +18,8 @@ do
 
 	if [ $java_ok -eq $stx_ok ]
 	then
-		echo -e "[\e[32mSUCCESS\e[39m] $infile"
+		echo -e "[\e[32mSUCCESS\e[0m] $infile"
 	else
-		echo -e "[\e[31mFAILURE\e[39m] $infile"
+		echo -e "[\e[31mFAILURE\e[0m] $infile"
 	fi
 done
