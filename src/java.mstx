@@ -28,7 +28,7 @@ class-declaration-ok(s, cd) :- cd match
 // normal-class-declaration-ok : scope * NormalClassDeclaration
 
 normal-class-declaration-ok(s, ncd) :- ncd match
-  { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations) -> {s_cls, tps, s_gen}
+  { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations) -> {s_cls, tps, s_gen, s_this}
       new s_cls -> (id, CLASS(s_cls))
     , s_cls -[ `LEX ]-> s
     , s -[ `TYPE ]-> s_cls
@@ -40,6 +40,10 @@ normal-class-declaration-ok(s, ncd) :- ncd match
     , s_gen -[ `LEX ]-> s_cls
     , s_cls -[ `GENERICS ]-> s_gen
     , maybe-type-parameters-ok(s_gen, maybeTypeParameters, tps)
+
+    // this
+    , new s_this -> CLASS(s_cls)
+    , s_cls -[ `THIS ]-> s_this
 
     // body
     , class-body-declarations-ok(s_cls, classBodyDeclarations)
@@ -82,12 +86,17 @@ decl-type-param(s, name, bounds, param) :- {param}
 // interface-declaration-ok : scope * InterfaceDeclaration
 
 interface-declaration-ok(s, id) :- id match
-  { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> {s_intf}
+  { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> {s_intf, s_this}
       new s_intf -> (id, INTF(s_intf))
     , s_intf -[ `LEX ]-> s
     , s -[ `TYPE ]-> s_intf
     , maybe-extends-interfaces-ok(s, maybeExtendsInterfaces, s_intf)
     , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
+
+    // this
+    , new s_this -> INTF(s_intf)
+    , s_intf -[ `THIS ]-> s_this
+
   }. 
 
 // maybe-super-class-ok maps super-class-ok(*, list(*), *)
@@ -204,6 +213,7 @@ method-declaration-ok(s, md) :- md match
   { MethodDecl(methodModifiers, methodHeader, methodBody) -> {s_method, decl}
       new s_method -> decl
     , s_method -[ `LEX ]-> s
+    , s -[ `METHOD ]-> s_method
     , method-header-ok(s_method, methodHeader, decl)
     , method-body-ok(s_method, methodBody)
   }.
@@ -211,10 +221,12 @@ method-declaration-ok(s, md) :- md match
 // method-header-ok : scope * MethodHeader * (Id, Type)
 
 method-header-ok(s, mh, decl) :- mh match
-  { MethodHeader(result, id, formalParams, annotatedDimsEmpty, maybeThrows) -> {ty, tys}
+  { MethodHeader(result, id, formalParams, annotatedDimsEmpty, maybeThrows) -> {ty, tys, s_ret}
       decl = (id, METHOD(ty, tys))
     , formal-params-ok(s, formalParams, tys)
     , result-ok(s, result, ty)
+    , new s_ret -> ty
+    , s -[ `RETURN ]-> s_ret
   }.
 
 // result-ok : scope * Result * tys * ty
@@ -292,6 +304,7 @@ interface-method-declaration-ok(s, imd) :- imd match
   { AbstractMethodDec(interfaceMethodModifiers, methodHeader, methodBody) -> {s_method, decl}
       new s_method -> decl
     , s_method -[ `LEX ]-> s
+    , s -[ `METHOD ]-> s_method
     , method-header-ok(s_method, methodHeader, decl)
     , method-body-ok(s_method, methodBody)
   }.
@@ -343,22 +356,33 @@ statement-ok(s, stmt) :- stmt match
       true
   | ExpressionStatement(e) ->
       expression-ok(s, e, _)
-  | Return() ->
-      true // TODO check void context
-  | Return(e) -> {ty}
+  | Return() -> {ty_ret}
+      return-type(s, VOID())
+  | Return(e) -> {ty_e, ty_ret}
+      expression-ok(s, e, ty_e)
+    , return-type(s, ty_ret)
+    , sub-type(ty_e, ty_ret)
+  }.
+
+// expressions-ok : scope * list(Expression) * list(Type)
+
+expressions-ok(s, es, tys) :- es match
+  { []   -> tys = []
+  | e:es -> {ty, tys'}
       expression-ok(s, e, ty)
-    , true // TODO check return type context
+    , expressions-ok(s, es, tys')
+    , tys = ty:tys'
   }.
 
 // expression-ok : scope * Expression * Type
 
 expression-ok(s, e, ty) :- e match
   { This() ->
-      this(s, ty)
+      this-type(s, ty)
   | QThis(typeName) -> {p, ty_this}
       type-name-ok(s, typeName, p)
     , datum(p, (_, ty))
-    , this(s, ty_this)
+    , this-type(s, ty_this)
     , sub-type(ty_this, ty)
   | CastPrimitive(primitiveType, e) -> {ty_e}
       primitive-type-ok(s, primitiveType, ty)
@@ -379,9 +403,11 @@ expression-ok(s, e, ty) :- e match
   | E2FA(fieldAccess) ->
       field-access-ok(s, fieldAccess, ty)
   | E2UI(unqualifiedInstance) ->
-      false // TODO
-  | QualifiedInstance(e, unqualifiedInstance) ->
-      false // TODO
+      unqualified-instance-ok(s, unqualifiedInstance, ty)
+  | QualifiedInstance(e, unqualifiedInstance) -> {ty_e, s_ty}
+      expression-ok(s, e, ty_e)
+    , type-scope(ty_e, s_ty)
+    , qualified-instance-ok(s, unqualifiedInstance, s_ty, ty)
   | E2L(literal) ->
       literal-ok(s, literal, ty)
   | E2EN(en) -> {p}
@@ -397,16 +423,44 @@ lhs-ok(s, lhs, ty) :- lhs match
       field-access-ok(s, fieldAccess, ty)
   }.
 
-unqualified-instance-ok(s, ui) :- ui match
-  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
-      false // TODO
-  | NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions, classBodyDeclarations) ->
-      false // TODO
+unqualified-instance-ok(s, ui, ty) :- ui match
+  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) -> {classType, tys}
+    // instantiated type
+      unqualified-instance-type-ok(s, id, qualifiedIds, ty)
+    // TODO type parameters
+    // TODO constructor checking
+    , expressions-ok(s, expressions, tys)
   }.
 
-qualified-id-ok(s, qid) :- qid match
-  { QualifiedId(annotations, id) ->
-      false // TODO
+unqualified-instance-type-ok(s, id, qualifiedIds, ty) :- qualifiedIds match
+  { [] -> {reached}
+      query s `LEX*`EXT*`IMPL*`TYPE as reached
+    , one-class-type(reached, id, ty)
+  | QualifiedId(_, id'):qualifiedIds -> {ty', s_ty', reached}
+      unqualified-instance-type-ok(s, id, qualifiedIds, ty')
+    , type-scope(ty', s_ty')
+    , query s_ty' `TYPE as reached
+    , one-class-type(reached, id, ty)
+  }.
+
+qualified-instance-ok(s, ui, s_cls, ty) :- ui match
+  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) -> {classType, tys}
+    // instantiated type
+      qualified-instance-type-ok(s_cls, id, qualifiedIds, ty)
+    // TODO type parameters
+    // TODO constructor checking
+    , expressions-ok(s, expressions, tys)
+  }.
+
+qualified-instance-type-ok(s_ty, id, qualifiedIds, ty) :- qualifiedIds match
+  { [] -> {reached}
+      query s_ty `EXT*`IMPL*`TYPE as reached
+    , one-class-type(reached, id, ty)
+  | QualifiedId(_, id'):qualifiedIds -> {ty', s_ty', reached}
+      qualified-instance-type-ok(s_ty, id, qualifiedIds, ty')
+    , type-scope(ty', s_ty')
+    , query s_ty' `TYPE as reached
+    , one-class-type(reached, id, ty)
   }.
 
 // field-access-ok : scope * FieldAccess * Type
@@ -417,11 +471,11 @@ field-access-ok(s, fa, ty) :- fa match
     , query s_cls `EXT*`VAR as reached
     , one-field-type(reached, id, ty)
   | SuperField(id) -> {s_cls, reached}
-      super(s, CLASS(s_cls))
+      super-class(s, CLASS(s_cls))
     , query s_cls `EXT*`VAR as reached
     , one-field-type(reached, id, ty)
   | QSuperField(typeName, id) -> {ty_this, reached, s_cls, p}
-      this(s, ty_this)
+      this-type(s, ty_this)
     , type-name-ok(s, typeName, p)
     , datum(p, (_, CLASS(s_cls)))
     , sub-type(ty_this, CLASS(s_cls))
@@ -559,9 +613,10 @@ class-type-ok(s, ct, ty) :- ct match
   { ClassType(annotations, id, maybeTypeArguments) -> {reached}
       query s `LEX*`EXT*`IMPL*`TYPE as reached
     , one-class-type(reached, id, ty)
-  | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s_cls, reached}
-      class-type-ok(s, classType, CLASS(s_cls))
-    , query s `TYPE as reached
+  | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
+      class-type-ok(s, classType, ty')
+    , type-scope(ty', s_ty')
+    , query s_ty' `TYPE as reached
     , one-class-type(reached, id, ty)
   }.
 
@@ -573,7 +628,6 @@ one-class-type(reached, id, ty) :- {matched, visible, p}
             , `EXT < `IMPL
             )
       visible
-
 , only(visible, p)
 , datum(p, (_, ty)).
 
@@ -610,9 +664,10 @@ unann-class-type-ok(s, urt, ty) :- urt match
     //, only(matches, p)
     //, datum(p, gen)
     //, ty = GEN(gen)
-  | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {s_cls, reached}
-      unann-class-type-ok(s, unannClassType, CLASS(s_cls))
-    , query s `TYPE as reached
+  | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
+      unann-class-type-ok(s, unannClassType, ty')
+    , type-scope(ty', s_ty')
+    , query s_ty' `TYPE as reached
     , one-class-type(reached, id, ty)
   }.
 
@@ -631,7 +686,14 @@ numeric-type-ok(s, nt, ty) :- nt match
 // sub-type : Type * Type
 
 sub-type(ty1, ty2) :- (ty1, ty2) match
-  { (ty, ty) -> true
+  { // (ty, ty)
+    (BYTE(), BYTE()) -> true
+  | (SHORT(), SHORT()) -> true
+  | (INT(), INT()) -> true
+  | (LONG(), LONG()) -> true
+  | (CHAR(), CHAR()) -> true
+  | (FLOAT(), FLOAT()) -> true
+  | (DOUBLE(), DOUBLE()) -> true
   | (INTF(s_intf1), INTF(s_intf2)) -> {reached, matched, p}
       query s_intf1 `IMPL* as reached
     , filter reached ((_, INTF(s_intf)) where s_intf = s_intf2) matched
@@ -644,6 +706,9 @@ sub-type(ty1, ty2) :- (ty1, ty2) match
       query s_cls1 `EXT*`IMPL* as reached
     , filter reached ((_, INTF(s_intf)) where s_intf = s_intf2) matched
     , only(matched, p)
+    // TODO (NULL(), ty)
+  | (NULL(), CLASS(wld)) -> true
+  | (NULL(), INTF(wld)) -> true
   }.
 
 // zip : list(X) * list(Y) -> list(X * Y)
@@ -670,11 +735,31 @@ src(p,s) :- p match
 // d is the datum of the target of p
 datum(p,d) :- {s} tgt(p, s), s -> d.
 
-this(s, ty) :- {reached}
-  false. // TODO find closest lexical parent that is a type scope
+this-type(s, ty) :- {reached, visible, p}
+  query s `LEX*`THIS as reached
+, min reached lexico(`THIS < `LEX) visible
+, only(visible, p)
+, datum(p, ty).
 
-super(s, ty) :-
-  false. // TODO
+super-class(s, ty) :- {ty'}
+  this-type(s, ty')
+, ty' match
+    { CLASS(s_cls) -> {reached, p}
+        query s_cls `EXT as reached
+      , only(reached, p)
+      , datum(p, (_, ty))
+    }.
+
+return-type(s, ty) :- {reached, visible, p}
+  query s `LEX*`RETURN as reached
+, min reached lexico(`THIS < `RETURN) visible
+, only(visible, p)
+, datum(p, ty).
+
+type-scope(ty, s_ty) :- ty match
+  { CLASS(s_cls) -> s_ty = s_cls
+  | INTF(s_intf) -> s_ty = s_intf
+  }.
 
 is-class-or-interface-type(tp) :- tp match
   { CLASS(_)  -> true
