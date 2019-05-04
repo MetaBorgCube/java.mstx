@@ -7,8 +7,6 @@ readonly ATERM="java -jar $DIR/../bin/org.metaborg.sunshine2-2.5.2.jar parse -l 
 
 for infile in "$@"
 do
-	echo "Running test '$infile'"
-
 	javac ${infile} 2>&1 | tee ${infile%.java}.javac.out 
 	java_ok=${PIPESTATUS[0]}
 
@@ -20,8 +18,8 @@ do
 
 	if [ $java_ok -eq $stx_ok ]
 	then
-		echo "SUCCESS"
+		echo -e "[\e[32mSUCCESS\e[39m] $infile"
 	else
-		echo "FAILURE"
+		echo -e "[\e[31mFAILURE\e[39m] $infile"
 	fi
 done
