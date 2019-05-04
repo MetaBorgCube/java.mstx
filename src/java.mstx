@@ -193,9 +193,9 @@ var-decl-id-ok(vdi, s_def, ty) :- vdi match
 // variable-initializer-ok : scope * VariableInitializer * Type
 
 variable-initializer-ok(s, vi, ty) :- vi match
-  { VI2E(e) -> {ty'}
-      expression-ok(s, e, ty')
-    , sub-type(ty', ty)
+  { VI2E(e) -> {ty_e}
+      expression-ok(s, e, ty_e)
+    , sub-type(ty_e, ty)
   }.
 
 // method-declaration-ok : scope * MethodDeclaration
@@ -354,90 +354,194 @@ statement-ok(s, stmt) :- stmt match
 
 expression-ok(s, e, ty) :- e match
   { This() ->
-      false
-  | QThis(typeName) ->
-      false
-  | CastPrimitive(primitiveType, e) ->
-      false
-  | CastReference(referenceType, additionalBounds, e) ->
-      false
-  | Assign(lhs, e) ->
-      false
+      this(s, ty)
+  | QThis(typeName) -> {p, ty_this}
+      type-name-ok(s, typeName, p)
+    , datum(p, (_, ty))
+    , this(s, ty_this)
+    , sub-type(ty_this, ty)
+  | CastPrimitive(primitiveType, e) -> {ty_e}
+      primitive-type-ok(s, primitiveType, ty)
+    , expression-ok(s, e, ty_e)
+    , sub-type(ty_e, ty)
+  | CastReference(referenceType, additionalBounds, e) -> {ty_e}
+      reference-type-ok(s, referenceType, ty)
+    , additionalBounds match
+        { []  -> true
+        | _:_ -> false // TODO create anonymous type
+        }
+    , expression-ok(s, e, ty_e)
+    , sub-type(ty_e, ty)
+  | Assign(lhs, e) -> {ty_e}
+      lhs-ok(s, lhs, ty)
+    , expression-ok(s, e, ty_e)
+    , sub-type(ty_e, ty)
   | E2FA(fieldAccess) ->
-      false
+      field-access-ok(s, fieldAccess, ty)
   | E2UI(unqualifiedInstance) ->
-      false
+      false // TODO
   | QualifiedInstance(e, unqualifiedInstance) ->
-      false
+      false // TODO
+  | E2L(literal) ->
+      literal-ok(s, literal, ty)
   }.
 
-lhs-ok(s, lhs) :- lhs match
-  { LHS2EN(expressionName) ->
-      false
+lhs-ok(s, lhs, ty) :- lhs match
+  { LHS2EN(expressionName) -> {p}
+      expression-name-ok(s, expressionName, p)
+    , datum(p, (_, ty))
   | LHS2FA(fieldAccess) ->
-      false
+      field-access-ok(s, fieldAccess, ty)
   }.
 
 unqualified-instance-ok(s, ui) :- ui match
   { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
-      false
+      false // TODO
   | NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions, classBodyDeclarations) ->
-      false
+      false // TODO
   }.
 
 qualified-id-ok(s, qid) :- qid match
   { QualifiedId(annotations, id) ->
-      false
+      false // TODO
   }.
 
-field-access-ok(s, fa) :- fa match
-  { Field(e, id) ->
-      false
-  | SuperField(id) ->
-      false
-  | QSuperField(typeName, id) ->
-      false
+// field-access-ok : scope * FieldAccess * Type
+
+field-access-ok(s, fa, ty) :- fa match
+  { Field(e, id) -> {s_cls, reached}
+      expression-ok(s, e, CLASS(s_cls))
+    , query s_cls `EXT*`VAR as reached
+    , one-field-type(reached, id, ty)
+  | SuperField(id) -> {s_cls, reached}
+      super(s, CLASS(s_cls))
+    , query s_cls `EXT*`VAR as reached
+    , one-field-type(reached, id, ty)
+  | QSuperField(typeName, id) -> {ty_this, reached, s_cls, p}
+      this(s, ty_this)
+    , type-name-ok(s, typeName, p)
+    , datum(p, (_, CLASS(s_cls)))
+    , sub-type(ty_this, CLASS(s_cls))
+    , query s_cls `EXT*`VAR as reached
+    , one-field-type(reached, id, ty)
   }.
 
-// package-name-ok : scope * PackageName
+one-field-type(reached, id, ty) :- {matched, visible, p}
+  filter reached ((id', _) where id' = id) matched
+, min matched
+      lexico( `VAR < `LEX, `VAR < `EXT
+            , `EXT < `LEX
+            )
+      visible
+, only(visible, p)
+, datum(p, (_, ty)).
 
-package-name-ok(s, tn) :- tn match
+// literal-ok : scope * Literal * Type
+
+literal-ok(s, l, ty) :- l match
+  { L2IL(il) -> int-literal-ok(s, il, ty)
+  | L2BL(bl) -> bool-literal-ok(s, bl, ty)
+  | L2SL(sl) -> string-literal-ok(s, sl, ty)
+  | L2NL(nl) -> null-literal-ok(s, nl, ty)
+  }.
+
+// bool-literal-ok : scope * BoolLiteral * Type
+
+bool-literal-ok(s, bl, ty) :- bl match
+  { True()  -> ty = BOOL()
+  | False() -> ty = BOOL()
+  }.
+
+// int-literal-ok : scope * IntLiteral * Type
+
+int-literal-ok(s, il, ty) :- il match
+  { Deci(_) -> ty = INT()
+  | Hexa(_) -> ty = INT()
+  | Octa(_) -> ty = INT()
+  | Bin(_)  -> ty = INT()
+  }.
+
+// string-literal-ok : scope * StringLiteral * Type
+
+string-literal-ok(s, sl, ty) :- sl match
+  { String() -> ty = STRING()
+  }.
+
+// null-literal-ok : scope * NullLiteral * Type
+
+null-literal-ok(s, nl, ty) :- nl match
+  { Null() -> ty = NULL()
+  }.
+
+// package-name-ok : scope * PackageName * path
+
+package-name-ok(s, tn, p) :- tn match
   { PackageName(id) ->
       false
   | PackageName(packageName, id) ->
       false
   }.
 
-// type-name-ok : scope * TypeName
+// type-name-ok : scope * TypeName * path
 
-type-name-ok(s, tn) :- tn match
-  { TypeName(id) ->
-      false
+type-name-ok(s, tn, p) :- tn match
+  { TypeName(id) -> {reached, matched, visible}
+      query s `LEX*`EXT*`IMPL*`TYPE as reached
+    , filter reached ((id', _) where id' = id) matched
+    , min matched
+          lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
+                , `EXT < `IMPL, `EXT < `LEX
+                , `IMPL < `LEX
+                )
+          visible
+    , only(visible, p)
   | TypeName(packageOrTypeName, id) ->
       false
   }.
 
-// expression-name-ok : scope * ExpressionName
+// expression-name-ok : scope * ExpressionName * path
 
-expression-name-ok(s, en) :- en match
-  { ExpressionName(id) ->
-      false
+expression-name-ok(s, en, p) :- en match
+  { ExpressionName(id) -> {reached, matched, visible}
+      query s `LEX*`EXT*`VAR as reached
+    , filter reached ((id', _) where id' = id) matched
+    , min matched
+          lexico( `VAR < `LEX, `VAR < `EXT
+                , `EXT < `LEX
+                )
+          visible
+    , only(visible, p)
   | ExpressionName(ambiguousName, id) ->
       false
   }.
 
-// ambiguous-name-ok : scope * AmbiguousName
+// ambiguous-name-ok : scope * AmbiguousName * path
 
-ambiguous-name-ok(s, an) :- an match
+ambiguous-name-ok(s, an, p) :- an match
   { AmbiguousName(id) ->
       false
   | AmbiguousName(ambiguousName, id) ->
       false
   }.
 
-method-name-ok(s, mn) :- mn match
+// method-name-ok : scope * MethodName * path
+
+method-name-ok(s, mn, p) :- mn match
   { MethodName(id) ->
       false
+  }.
+
+// primitive-type-ok : scope * PrimitiveType
+
+primitive-type-ok(s, pt, ty) :- pt match
+  { NumericType(annotations, nt) -> numeric-type-ok(s, nt, ty)
+  | BooleanType(annotations)     -> ty = BOOLEAN()
+  }.
+
+// reference-type-ok : scope * ReferenceType
+
+reference-type-ok(s, rt, ty) :- rt match
+  { RT2CT(ct) -> class-type-ok(s, ct, ty)
   }.
 
 // class-types-ok maps class-type-ok(*, list(*)) = list(*)
@@ -450,7 +554,7 @@ class-types-ok(s, cts, tys) :- {ct-ty-s}
 
 class-type-ok(s, ct, ty) :- ct match
   { ClassType(annotations, id, maybeTypeArguments) -> {reached}
-      query s `LEX*`IMPORT*`TYPE as reached // TODO IMPORT* ?!
+      query s `LEX*`IMPORT*`EXT*`IMP*`TYPE as reached // TODO IMPORT* ?!
     , one-class-type(reached, id, ty)
   | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s_cls, reached}
       class-type-ok(s, classType, CLASS(s_cls))
@@ -459,10 +563,10 @@ class-type-ok(s, ct, ty) :- ct match
   }.
 
 one-class-type(reached, id, ty) :- {matched, visible, p}
-  filter reached ((id', ty') where id' = id) matched
+  filter reached ((id', _) where id' = id) matched
 , min matched lexico(`TYPE < `LEX) visible
 , only(visible, p)
-, datum(p, (id, ty)).
+, datum(p, (_, ty)).
 
 // unann-type-ok : scope * UnannType
 
@@ -555,6 +659,12 @@ src(p,s) :- p match
 
 // d is the datum of the target of p
 datum(p,d) :- {s} tgt(p, s), s -> d.
+
+this(s, ty) :- {reached}
+  false. // TODO find closest lexical parent that is a type scope
+
+super(s, ty) :-
+  false. // TODO
 
 is-class-or-interface-type(tp) :- tp match
   { CLASS(_)  -> true
