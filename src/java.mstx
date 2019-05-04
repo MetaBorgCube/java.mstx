@@ -352,8 +352,93 @@ statement-ok(s, stmt) :- stmt match
 
 // expression-ok : scope * Expression * Type
 
-expression-ok(s, e, ty) :-
-  true. // TODO
+expression-ok(s, e, ty) :- e match
+  { This() ->
+      false
+  | QThis(typeName) ->
+      false
+  | CastPrimitive(primitiveType, e) ->
+      false
+  | CastReference(referenceType, additionalBounds, e) ->
+      false
+  | Assign(lhs, e) ->
+      false
+  | E2FA(fieldAccess) ->
+      false
+  | E2UI(unqualifiedInstance) ->
+      false
+  | QualifiedInstance(e, unqualifiedInstance) ->
+      false
+  }.
+
+lhs-ok(s, lhs) :- lhs match
+  { LHS2EN(expressionName) ->
+      false
+  | LHS2FA(fieldAccess) ->
+      false
+  }.
+
+unqualified-instance-ok(s, ui) :- ui match
+  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
+      false
+  | NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions, classBodyDeclarations) ->
+      false
+  }.
+
+qualified-id-ok(s, qid) :- qid match
+  { QualifiedId(annotations, id) ->
+      false
+  }.
+
+field-access-ok(s, fa) :- fa match
+  { Field(e, id) ->
+      false
+  | SuperField(id) ->
+      false
+  | QSuperField(typeName, id) ->
+      false
+  }.
+
+// package-name-ok : scope * PackageName
+
+package-name-ok(s, tn) :- tn match
+  { PackageName(id) ->
+      false
+  | PackageName(packageName, id) ->
+      false
+  }.
+
+// type-name-ok : scope * TypeName
+
+type-name-ok(s, tn) :- tn match
+  { TypeName(id) ->
+      false
+  | TypeName(packageOrTypeName, id) ->
+      false
+  }.
+
+// expression-name-ok : scope * ExpressionName
+
+expression-name-ok(s, en) :- en match
+  { ExpressionName(id) ->
+      false
+  | ExpressionName(ambiguousName, id) ->
+      false
+  }.
+
+// ambiguous-name-ok : scope * AmbiguousName
+
+ambiguous-name-ok(s, an) :- an match
+  { AmbiguousName(id) ->
+      false
+  | AmbiguousName(ambiguousName, id) ->
+      false
+  }.
+
+method-name-ok(s, mn) :- mn match
+  { MethodName(id) ->
+      false
+  }.
 
 // class-types-ok maps class-type-ok(*, list(*)) = list(*)
 
