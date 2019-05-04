@@ -3,7 +3,20 @@
 set -eu
 
 readonly DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-readonly ATERM="java -jar $DIR/../bin/org.metaborg.sunshine2-2.5.2.jar parse -l $DIR/../lib/java.spfx/lang.java -p . -i"
+
+readonly JAVADIR="$DIR/../lib/java.spfx/lang.java"
+if [ ! -d "$JAVADIR" ]; then
+    echo "FAILURE: Cannot find directory $JAVADIR"
+    exit 1
+fi
+
+readonly SUNSHINE="$DIR/../bin/org.metaborg.sunshine2-2.5.2.jar"
+if [ ! -f "$SUNSHINE" ]; then
+    echo "FAILURE: Cannot find file $SUNSHINE"
+    exit 1
+fi
+
+readonly ATERM="java -jar $SUNSHINE parse -l $JAVADIR -p . -i"
 
 for infile in "$@"
 do
