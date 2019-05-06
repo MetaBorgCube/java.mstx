@@ -603,9 +603,13 @@ reference-type-ok(s, rt, ty) :- rt match
 
 // class-types-ok maps class-type-ok(*, list(*)) = list(*)
 
-class-types-ok(s, cts, tys) :- {ct-ty-s}
-  zip(cts, tys, ct-ty-s)
-, ct-ty-s match { (ct, ty) -> class-type-ok(s, ct, ty) }.
+class-types-ok(s, cts, tys) :- cts match
+  { ct:cts' -> {ty, tys'}
+       class-type-ok(s, ct, ty)
+     , class-types-ok(s, cts', tys')
+     , tys = ty:tys'
+  | []      -> tys = []
+  }.
 
 // class-type-ok : scope * ClassType -> TYPE
 
