@@ -1,9 +1,10 @@
 # paths
-JAVA_FRONT   = lib/java.spfx/lang.java/
-SUNSHINE_URL = http://artifacts.metaborg.org/service/local/repositories/releases/content/org/metaborg/org.metaborg.sunshine2/2.5.2/org.metaborg.sunshine2-2.5.2.jar
-SUNSHINE_JAR = bin/org.metaborg.sunshine2-2.5.2.jar
-SPEC         = src/java.mstx
-TESTS        = tests/
+JAVA_FRONT   =  lib/java.spfx/lang.java/
+SUNSHINE_URL =  http://artifacts.metaborg.org/service/local/repositories/releases/content/org/metaborg/org.metaborg.sunshine2/2.5.2/org.metaborg.sunshine2-2.5.2.jar
+SUNSHINE_JAR =  bin/org.metaborg.sunshine2-2.5.2.jar
+SPEC         =  src/java.mstx
+TESTS        ?= tests/ # directory
+TESTRE       ?= '*.java' # iname
 
 ## external commands with configuration
 MAVEN_OPTS   = "-Xms512m -Xmx1024m -Xss16m"
@@ -13,7 +14,7 @@ PARSE_JAVA   = $(SUNSHINE) parse -l lib/java.spfx/lang.java -p . -i
 STATIX       = statix $(SPEC)
 JAVAC        = javac
 
-JAVA_TESTS   = $(shell find $(TESTS) -name '*.java')
+JAVA_TESTS   = $(shell find $(TESTS) -iname $(TESTRE))
 
 TEST_TARGETS = $(JAVA_TESTS:%.java=%.result)
 
