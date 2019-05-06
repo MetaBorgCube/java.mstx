@@ -626,6 +626,9 @@ one-class-type(reached, id, ty) :- {matched, visible, p}
       lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
             , `EXT < `LEX, `EXT < `IMPL
             , `EXT < `IMPL
+	    , `GENERICS < `LEX, `GENERICS < `EXT, `GENERICS < `IMPL
+	    // TODO local type definintions > generics in header?
+	    // probably resolve this by distinguishing an extra lexical scope layer
             )
       visible
 , only(visible, p)
@@ -655,15 +658,8 @@ unann-reference-type-ok(s, urt, ty) :- urt match
 
 unann-class-type-ok(s, urt, ty) :- urt match
   { ClassType(id, maybeTypeArguments) -> {reached}
-      query s `LEX*`EXT*`IMPL*`TYPE as reached
+      query s `LEX*(`EXT*`IMPL*`TYPE|`GENERICS`GEN)  as reached
     , one-class-type(reached, id, ty)
-    // TODO currently fails
-    //, {gens, matches, p, gen}
-    //  query s `LEX*`GENERICS`GEN as gens
-    //, filter gens ((name, _) where name = id) matches
-    //, only(matches, p)
-    //, datum(p, gen)
-    //, ty = GEN(gen)
   | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
       unann-class-type-ok(s, unannClassType, ty')
     , type-scope(ty', s_ty')
