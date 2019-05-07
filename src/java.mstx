@@ -71,7 +71,7 @@ type-parameter-decl-ok(s_gen, s_cls, typeParameter, tp) :- typeParameter match
   | TypeParameterExtendsClassType(annots, name, fcts) -> {cts}
       class-types-ok(s_cls, fcts, cts)
     , type-bounds-ok(cts)
-    , decl-type-param(s_gen, name, [], tp)
+    , decl-type-param(s_gen, name, cts, tp)
   }.
 
 type-bounds-ok(cts) :- cts match
@@ -80,8 +80,8 @@ type-bounds-ok(cts) :- cts match
   }.
 
 decl-type-param(s, name, bounds, param) :-
-      new param -> (name, bounds)
-    , s -[ `GEN ]-> param.
+      new param -> (name, TVAR(param, bounds))
+    , s -[ `TYPE ]-> param.
 
 // interface-declaration-ok : scope * InterfaceDeclaration
 
@@ -615,7 +615,7 @@ class-types-ok(s, cts, tys) :- cts match
 
 class-type-ok(s, ct, ty) :- ct match
   { ClassType(annotations, id, maybeTypeArguments) -> {reached, tas}
-      query s `LEX*(`EXT*`IMPL*`TYPE|`GENERICS`GEN)  as reached
+      query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
       , one-class-type(reached, id, ty)
       , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
   | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
@@ -628,12 +628,9 @@ class-type-ok(s, ct, ty) :- ct match
 one-class-type(reached, id, ty) :- {matched, visible, p, x}
   filter reached ((id', _) where id' = id) matched
 , min matched
-      lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
-            , `EXT < `LEX, `EXT < `IMPL
-            , `EXT < `IMPL
+      lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL, `TYPE < `GENERICS
+            , `EXT < `LEX, `EXT < `IMPL, `EXT < `IMPL
 	    , `GENERICS < `LEX, `GENERICS < `EXT, `GENERICS < `IMPL
-	    // TODO local type definintions > generics in header?
-	    // probably resolve this by distinguishing an extra lexical scope layer
             )
       visible
 , only(visible, p)
@@ -663,7 +660,7 @@ unann-reference-type-ok(s, urt, ty) :- urt match
 
 unann-class-type-ok(s, urt, ty) :- urt match
   { ClassType(id, maybeTypeArguments) -> {reached, tas}
-      query s `LEX*(`EXT*`IMPL*`TYPE|`GENERICS`GEN)  as reached
+      query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
     , one-class-type(reached, id, ty)
     , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
   | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
@@ -725,6 +722,7 @@ sub-type(ty1, ty2) :- (ty1, ty2) match
     // TODO (NULL(), ty)
   | (NULL(), CLASS(wld)) -> true
   | (NULL(), INTF(wld)) -> true
+  // TODO TVAR
   }.
 
 // zip : list(X) * list(Y) -> list(X * Y)
@@ -738,14 +736,14 @@ zip(xs,ys,xys) :- (xs, ys) match
 
 // s is the target scope of a path p
 tgt(p,s) :- p match
-  { end(x)       -> s = x
-  | edge(x,l,xs) -> tgt(xs,s)
+  { End(x)       -> s = x
+  | Edge(x,l,xs) -> tgt(xs,s)
   }.
 
 // s is the source scope of a path p
 src(p,s) :- p match
-  { end(x)       -> s = x
-  | edge(x,l,xs) -> s = x
+  { End(x)       -> s = x
+  | Edge(x,l,xs) -> s = x
   }.
 
 // d is the datum of the target of p
