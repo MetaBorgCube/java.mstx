@@ -20,19 +20,28 @@ readonly ATERM="java -jar $SUNSHINE parse -l $JAVADIR -p . -i"
 
 for infile in "$@"
 do
-	javac ${infile} 2>&1 | tee ${infile%.java}.javac.out 
-	java_ok=${PIPESTATUS[0]}
+    if ! (echo $infile | grep -s "no.java") 
+    then
+        positive=0
+	echo "Expect pass"
+    else
+        positive=1
+	echo "Expect fail"
+    fi
 
-	jav=${infile%.java}.jav
-	cp ${infile} $jav
-	${ATERM} ${infile%.java}.jav > ${infile%.java}.aterm 2> /dev/null
-	statix $DIR/../src/java.mstx ${infile%.java}.aterm 2>&1 | tee ${infile%.java}.stx.out
-	stx_ok=${PIPESTATUS[0]}
+    javac $infile 2>&1 | tee ${infile%.java}.javac.out 
+    java_ok=${PIPESTATUS[0]}
 
-	if [ $java_ok -eq $stx_ok ]
-	then
-		echo -e "[\e[32mSUCCESS\e[0m] $infile"
-	else
-		echo -e "[\e[31mFAILURE\e[0m] $infile"
-	fi
+    jav=${infile%.java}.jav
+    cp "$infile" $jav
+    ${ATERM} ${infile%.java}.jav > ${infile%.java}.aterm 2> /dev/null
+    statix $DIR/../src/java.mstx ${infile%.java}.aterm 2>&1 | tee ${infile%.java}.stx.out
+    stx_ok=${PIPESTATUS[0]}
+
+    if [ $java_ok -eq $stx_ok -a $java_ok -eq $positive ]
+    then
+	echo -e "[\e[32mSUCCESS\e[0m] $infile"
+    else
+	echo -e "[\e[31mFAILURE\e[0m] $infile"
+    fi
 done

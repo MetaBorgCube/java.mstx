@@ -54,7 +54,7 @@ javafront: lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-langu
 	rm -f $(<:%.java=%.jav)
 
 %.result: %.java src/
-	@./tests/run $< | tee $@ | grep -i "running\|failure\|success"
+	@./tests/run $< | tee $@ | grep -i "failure\|success"
 
 test: $(TEST_TARGETS)
 
