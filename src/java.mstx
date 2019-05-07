@@ -39,7 +39,7 @@ normal-class-declaration-ok(s, ncd) :- ncd match
     , new s_gen -> tps
     , s_gen -[ `LEX ]-> s_cls
     , s_cls -[ `GENERICS ]-> s_gen
-    , maybe-type-parameters-ok(s_gen, s_cls, maybeTypeParameters, tps)
+    , maybe-type-parameter-decls-ok(s_gen, s_cls, maybeTypeParameters, tps)
 
     // this
     , new s_this -> CLASS(s_cls)
@@ -49,24 +49,24 @@ normal-class-declaration-ok(s, ncd) :- ncd match
     , class-body-declarations-ok(s_cls, classBodyDeclarations)
   }. 
 
-maybe-type-parameters-ok(s_gen, s_cls, maybeTypeParameters, tps) :- maybeTypeParameters match
+maybe-type-parameter-decls-ok(s_gen, s_cls, maybeTypeParameters, tps) :- maybeTypeParameters match
   { None()                    -> tps = []
-  | Some(TypeParameters(ftps)) -> type-parameters-ok(s_gen, s_cls, ftps, tps)
+  | Some(TypeParameters(ftps)) -> type-parameter-decls-ok(s_gen, s_cls, ftps, tps)
   }.
 
 // type parameter list
 // - scoping rules in sectio 6.3 and 6.4
 // - syntax in section 8.1.2
 // - extends section looks like (extends ClassOrInterfaceType|TypeVar [& InterfaceType]*)
-type-parameters-ok(s_gen, s_cls, typeParameters, tps) :- typeParameters match
+type-parameter-decls-ok(s_gen, s_cls, typeParameters, tps) :- typeParameters match
   { ftp:ftps -> {tp, tps'}
       tps = tp:tps'
-    , type-parameter-ok(s_gen, s_cls, ftp, tp)
-    , type-parameters-ok(s_gen, s_cls, ftps, tps')
+    , type-parameter-decl-ok(s_gen, s_cls, ftp, tp)
+    , type-parameter-decls-ok(s_gen, s_cls, ftps, tps')
   | [] -> tps = []
   }.
 
-type-parameter-ok(s_gen, s_cls, typeParameter, tp) :- typeParameter match
+type-parameter-decl-ok(s_gen, s_cls, typeParameter, tp) :- typeParameter match
   { TypeParameter(annots, name) -> decl-type-param(s_gen, name, [], tp)
   | TypeParameterExtendsClassType(annots, name, fcts) -> {cts}
       class-types-ok(s_cls, fcts, cts)
@@ -661,15 +661,30 @@ unann-reference-type-ok(s, urt, ty) :- urt match
 // unann-class-type-ok : scope * UnannClassType
 
 unann-class-type-ok(s, urt, ty) :- urt match
-  { ClassType(id, maybeTypeArguments) -> {reached}
+  { ClassType(id, maybeTypeArguments) -> {reached, tas}
       query s `LEX*(`EXT*`IMPL*`TYPE|`GENERICS`GEN)  as reached
     , one-class-type(reached, id, ty)
+    , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
   | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
       unann-class-type-ok(s, unannClassType, ty')
     , type-scope(ty', s_ty')
     , query s_ty' `TYPE as reached
     , one-class-type(reached, id, ty)
   }.
+
+maybe-type-arguments-ok(s, maybeTypeArguments, tps) :- maybeTypeArguments match
+  { None()                    -> tps = []
+  | Some(TypeArguments(ftps)) -> type-arguments-ok(s, ftps, tps)
+  }.
+
+type-arguments-ok(s, typeArguments, tps) :- typeArguments match
+  { ta:tas -> {tp, tps'}
+      tps = tp:tps'
+    , reference-type-ok(s, tas, tps')
+    , type-arguments-ok(s, ta, tp)
+  | [] -> tps = []
+  }.
+
 
 // numeric-type-ok : scope * NumericType
 
@@ -752,7 +767,7 @@ super-class(s, ty) :- {ty', x}
 
 return-type(s, ty) :- {reached, visible, p}
   query s `LEX*`RETURN as reached
-, min reached lexico(`THIS < `RETURN) visible
+, min reached lexico(`RETURN < `LEX) visible
 , only(visible, p)
 , datum(p, ty).
 
