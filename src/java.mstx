@@ -426,8 +426,7 @@ expression-ok(s, e, ty) :- e match
       literal-ok(s, literal, ty)
   | E2EN(en) -> {x, p}
       expression-name-ok(s, en, p)
-    , false // datum(p, (x, ty)), 
-    // TODO normalize field access on implicit this?
+    , normalized-field-ty(p, [], ty)
   }.
 
 lhs-ok(s, lhs, ty) :- lhs match
@@ -517,6 +516,7 @@ normalized-field-ty(p, targs, ty) :- p match
     , type-formal-params(tydecl, params)
     , datum(p, (varname, varty))
     , substn(targs, params, varty, ty)
+  | Edge(_, `LEX, p) -> normalized-field-ty(p, targs, ty)
   }.
 
 substn(tys, vars, ty, out) :- ty match 
