@@ -1,2 +1,3 @@
 class A<X,Y> {}
-class B extends A<Integer,Boolean> {}
+class C {}
+class B extends A<C,C> {}

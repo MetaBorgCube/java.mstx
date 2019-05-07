@@ -614,9 +614,10 @@ class-types-ok(s, cts, tys) :- cts match
 // class-type-ok : scope * ClassType -> TYPE
 
 class-type-ok(s, ct, ty) :- ct match
-  { ClassType(annotations, id, maybeTypeArguments) -> {reached}
+  { ClassType(annotations, id, maybeTypeArguments) -> {reached, tas}
       query s `LEX*(`EXT*`IMPL*`TYPE|`GENERICS`GEN)  as reached
       , one-class-type(reached, id, ty)
+      , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
   | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
       class-type-ok(s, classType, ty')
     , type-scope(ty', s_ty')
@@ -680,8 +681,8 @@ maybe-type-arguments-ok(s, maybeTypeArguments, tps) :- maybeTypeArguments match
 type-arguments-ok(s, typeArguments, tps) :- typeArguments match
   { ta:tas -> {tp, tps'}
       tps = tp:tps'
-    , reference-type-ok(s, tas, tps')
-    , type-arguments-ok(s, ta, tp)
+    , reference-type-ok(s, ta, tps')
+    , type-arguments-ok(s, tas, tp)
   | [] -> tps = []
   }.
 
