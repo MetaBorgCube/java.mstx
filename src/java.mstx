@@ -116,7 +116,7 @@ interface-declaration-ok(s_pkg, id) :- id match
     {s_header, s_intf, s_this, self, tps}
       new s_header
     , new s_intf -> (id, self)
-    , no-duplicate-type(s_pkg, id, s_intf)
+    , no-duplicate-type(s_pkg, id, self)
 
     // generics
     , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
