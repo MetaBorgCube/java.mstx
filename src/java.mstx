@@ -35,6 +35,11 @@ class-declaration-ok(s, cd) :- cd match
   { CD2NCD(ncd) -> normal-class-declaration-ok(s, ncd)
   }.
 
+no-duplicate-type(s, name, ty) :- {defs, matches}
+    query s `TYPE as defs
+  , filter defs ((name', ty') where name' == name, ty' != ty) matches
+  , empty(matches).
+
 // normal-class-declaration-ok : scope * NormalClassDeclaration
 
 normal-class-declaration-ok(s_pkg, ncd) :- ncd match
@@ -43,6 +48,10 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
       new s_header
     , new s_cls -> (id, self)
 
+    // the declaration and prohibit duplicates
+    , s_pkg -[ `TYPE ]-> s_cls
+    , no-duplicate-type(s_pkg, id, self)
+
     // generics
     , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
 
@@ -50,10 +59,9 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
     , maybe-super-class-ok(s_header, maybeSuperClass, s_cls)
     , maybe-super-interfaces-ok(s_header, maybeSuperInterfaces, s_cls)
 
-    , self = CLASS(s_cls, tps)
+    , self == CLASS(s_cls, tps)
     , s_cls    -[ `LEX  ]-> s_header
     , s_header -[ `LEX  ]-> s_pkg
-    , s_pkg    -[ `TYPE ]-> s_cls
 
     // this
     , new s_this -> OBJECT(self, tps)
@@ -64,7 +72,7 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
   }. 
 
 maybe-type-parameter-decls-ok(s_cls, maybeTypeParameters, tps) :- maybeTypeParameters match
-  { None()                    -> tps = []
+  { None()                    -> tps == []
   | Some(TypeParameters(ftps)) -> type-parameter-decls-ok(s_cls, ftps, tps)
   }.
 
@@ -74,10 +82,10 @@ maybe-type-parameter-decls-ok(s_cls, maybeTypeParameters, tps) :- maybeTypeParam
 // - extends section looks like (extends ClassOrInterfaceType|TypeVar [& InterfaceType]*)
 type-parameter-decls-ok(s_cls, typeParameters, tps) :- typeParameters match
   { ftp:ftps -> {tp, tps'}
-      tps = tp:tps'
+      tps == tp:tps'
     , type-parameter-decl-ok(s_cls, ftp, tp)
     , type-parameter-decls-ok(s_cls, ftps, tps')
-  | [] -> tps = []
+  | [] -> tps == []
   }.
 
 type-parameter-decl-ok(s_cls, typeParameter, tp) :- typeParameter match
@@ -96,6 +104,7 @@ type-bounds-ok(cts) :- cts match
 decl-type-param(s, name, bounds, n_param) :- {n_bounds}
       new n_param -> (name, TVAR(n_param))
     , s -[ `TYPE ]-> n_param
+    , no-duplicate-type(s, name, n_param)
     , new n_bounds -> bounds
     , n_param -[ `BOUNDS ]-> n_bounds.
 
@@ -106,6 +115,7 @@ interface-declaration-ok(s_pkg, id) :- id match
     {s_header, s_intf, s_this, self, tps}
       new s_header
     , new s_intf -> (id, self)
+    , no-duplicate-type(s_pkg, id, s_intf)
 
     // generics
     , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
@@ -113,7 +123,7 @@ interface-declaration-ok(s_pkg, id) :- id match
     // header
     , maybe-extends-interfaces-ok(s_header, maybeExtendsInterfaces, s_intf)
 
-    , self = INTF(s_intf, tps)
+    , self == INTF(s_intf, tps)
     , s_intf   -[ `LEX  ]-> s_header
     , s_header -[ `LEX  ]-> s_pkg
     , s_pkg    -[ `TYPE ]-> s_intf
@@ -248,7 +258,7 @@ method-declaration-ok(s, md) :- md match
 
 method-header-ok(s, mh, decl) :- mh match
   { MethodHeader(result, id, formalParams, annotatedDimsEmpty, maybeThrows) -> {ty, tys, s_ret}
-      decl = (id, METHOD(ty, tys))
+      decl == (id, METHOD(ty, tys))
     , formal-params-ok(s, formalParams, tys)
     , result-ok(s, result, ty)
     , new s_ret -> ty
@@ -259,23 +269,23 @@ method-header-ok(s, mh, decl) :- mh match
 
 result-ok(s, r, ty) :- r match
   { R2UT(ut) -> unann-type-ok(s, ut, ty)
-  | Void()   -> ty = VOID()
+  | Void()   -> ty == VOID()
   }.
 
 // formal-params-ok : scope * FormalParams
 
 formal-params-ok(s, fps, tys) :- fps match
   { NoParams() ->
-      tys = []
+      tys == []
   | SingleParam(lfp) -> {ty}
       last-formal-param-ok(s, lfp, ty)
-    , tys = ty:[]
+    , tys == ty:[]
   | ParamList([], lfp) ->
       formal-params-ok(s, SingleParam(lfp), tys)
   | ParamList(fp:fps, lfp) -> {ty, tys'}
       formal-param-ok(s, fp, ty)
     , formal-params-ok(s, ParamList(fps, lfp), tys')
-    , tys = ty:tys'
+    , tys == ty:tys'
   }.
 
 last-formal-param-ok(s, lfp, ty) :- lfp match
@@ -393,11 +403,11 @@ statement-ok(s, stmt) :- stmt match
 // expressions-ok : scope * list(Expression) * list(Type)
 
 expressions-ok(s, es, tys) :- es match
-  { []   -> tys = []
+  { []   -> tys == []
   | e:es -> {ty, tys'}
       expression-ok(s, e, ty)
     , expressions-ok(s, es, tys')
-    , tys = ty:tys'
+    , tys == ty:tys'
   }.
 
 // expression-ok : scope * Expression * Type
@@ -536,35 +546,35 @@ normalized-field-ty(p, targs, ty) :- p match
 substn(tys, vars, ty, out) :- ty match 
   { OBJECT(TVAR(var), []) ->  {tydecl, params'}
         substn-tvar(tys, vars, var, tydecl)
-      , out = tydecl
+      , out == tydecl
   | OBJECT(tydecl, params) ->  {params'}
         substn-all(tys, vars, params, params')
-      , out = OBJECT(tydecl, params')
+      , out == OBJECT(tydecl, params')
   }.
 
 substn-all(tys, vars, ins, outs) :- ins match 
   { i:ins' -> {out, outs'} 
         substn(tys, vars, i, out)
       , substn-all(tys, vars, ins', outs')
-      , outs = out:outs'
-  | [] -> outs = []
+      , outs == out:outs'
+  | [] -> outs == []
   }.
 
 substn-tvar(tys, vars, x, out) :- tys match
   { ty:tys' -> {y, ys, out'} 
-        vars = y:ys
+        vars == y:ys
       , subst-tvar(ty, y, x, out')
       , substn(tys', ys, out', out)
-  | [] -> out = TVAR(x)
+  | [] -> out == TVAR(x)
   }.
 
 subst-tvar(ty, var, x, out) :- x match 
-  { z where z = var -> out = ty
-  | _               -> out = x
+  { z where z == var -> out == ty
+  | _               -> out == x
   }.
 
 unambiguous-field(reached, id, p) :- {matched, visible}
-  filter reached ((id', _) where id' = id) matched
+  filter reached ((id', _) where id' == id) matched
 , min matched
       lexico( `VAR < `LEX, `VAR < `EXT
             , `EXT < `LEX
@@ -584,29 +594,29 @@ literal-type(s, l, ty) :- l match
 // bool-literal-type : scope * BoolLiteral * Type
 
 bool-literal-type(s, bl, ty) :- bl match
-  { True()  -> ty = BOOL()
-  | False() -> ty = BOOL()
+  { True()  -> ty == BOOL()
+  | False() -> ty == BOOL()
   }.
 
 // int-literal-type : scope * IntLiteral * Type
 
 int-literal-type(s, il, ty) :- il match
-  { Deci(_) -> ty = INT()
-  | Hexa(_) -> ty = INT()
-  | Octa(_) -> ty = INT()
-  | Bin(_)  -> ty = INT()
+  { Deci(_) -> ty == INT()
+  | Hexa(_) -> ty == INT()
+  | Octa(_) -> ty == INT()
+  | Bin(_)  -> ty == INT()
   }.
 
 // string-literal-type : scope * StringLiteral * Type
 
 string-literal-type(s, sl, ty) :- sl match
-  { String() -> ty = STRING()
+  { String() -> ty == STRING()
   }.
 
 // null-literal-type : scope * NullLiteral * Type
 
 null-literal-type(s, nl, ty) :- nl match
-  { Null() -> ty = NULL()
+  { Null() -> ty == NULL()
   }.
 
 // package-name-ok : scope * PackageName * path
@@ -623,7 +633,7 @@ package-name-ok(s, tn, p) :- tn match
 type-name-ok(s, tn, p) :- tn match
   { TypeName(id) -> {reached, matched, visible}
       query s `LEX*`EXT*`IMPL*`TYPE as reached
-    , filter reached ((id', _) where id' = id) matched
+    , filter reached ((id', _) where id' == id) matched
     , min matched
           lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
                 , `EXT < `IMPL, `EXT < `LEX
@@ -640,7 +650,7 @@ type-name-ok(s, tn, p) :- tn match
 expression-name-ok(s, en, p) :- en match
   { ExpressionName(id) -> {reached, matched, visible}
       query s `LEX*`EXT*`VAR as reached
-    , filter reached ((id', _) where id' = id) matched
+    , filter reached ((id', _) where id' == id) matched
     , min matched
           lexico( `VAR < `LEX, `VAR < `EXT
                 , `EXT < `LEX
@@ -671,7 +681,7 @@ method-name-ok(s, mn, p) :- mn match
 
 primitive-type-ok(s, pt, ty) :- pt match
   { NumericType(annotations, nt) -> numeric-type-ok(s, nt, ty)
-  | BooleanType(annotations)     -> ty = BOOLEAN()
+  | BooleanType(annotations)     -> ty == BOOLEAN()
   }.
 
 // reference-type-ok : scope * ReferenceType
@@ -680,14 +690,14 @@ reference-type-ok(s, rt, ty) :- rt match
   { RT2CT(ct) -> class-type-ok(s, ct, ty)
   }.
 
-// class-types-ok maps class-type-ok(*, list(*)) = list(*)
+// class-types-ok maps class-type-ok(*, list(*)) == list(*)
 
 class-types-ok(s, cts, tys) :- cts match
   { ct:cts' -> {ty, tys'}
        class-type-ok(s, ct, ty)
      , class-types-ok(s, cts', tys')
-     , tys = ty:tys'
-  | []      -> tys = []
+     , tys == ty:tys'
+  | []      -> tys == []
   }.
 
 // class-type-ok : scope * ClassType -> TYPE
@@ -697,7 +707,7 @@ class-type-ok(s, ct, ty) :- ct match
       query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
       , unambiguous-class(reached, id, cls)
       , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
-      , ty = OBJECT(cls, tas)
+      , ty == OBJECT(cls, tas)
   // | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {tydecl, targs, s_ty, reached, tas}
   //       class-type-ok(s, classType, OBJECT(tydecl, targs))
   //     , type-scope(tydecl, s_ty)
@@ -708,7 +718,7 @@ class-type-ok(s, ct, ty) :- ct match
   }.
 
 unambiguous-class(reached, id, ty) :- {matched, visible, p, x}
-  filter reached ((id', _) where id' = id) matched
+  filter reached ((id', _) where id' == id) matched
 , min matched
       lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL, `TYPE < `GENERICS
             , `EXT < `LEX, `EXT < `IMPL, `EXT < `IMPL
@@ -729,7 +739,7 @@ unann-type-ok(s, ut, ty) :- ut match
 
 unann-primitive-type-ok(s, upt, ty) :- upt match
   { NumericType(nt) -> numeric-type-ok(s, nt, ty)
-  | BooleanType()   -> ty = BOOLEAN()
+  | BooleanType()   -> ty == BOOLEAN()
   }.
 
 // unann-reference-type-ok : scope * UnannReferenceType
@@ -745,7 +755,7 @@ unann-class-type-ok(s, urt, ty) :- urt match
       query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
     , unambiguous-class(reached, id, cls)
     , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
-    , ty = OBJECT(cls, tas)
+    , ty == OBJECT(cls, tas)
   // | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
   //     unann-class-type-ok(s, unannClassType, ty')
   //   , type-scope(ty', s_ty')
@@ -754,29 +764,29 @@ unann-class-type-ok(s, urt, ty) :- urt match
   }.
 
 maybe-type-arguments-ok(s, maybeTypeArguments, tps) :- maybeTypeArguments match
-  { None()                    -> tps = []
+  { None()                    -> tps == []
   | Some(TypeArguments(ftps)) -> type-arguments-ok(s, ftps, tps)
   }.
 
 type-arguments-ok(s, typeArguments, tps) :- typeArguments match
   { ta:tas -> {tp, tps'}
-      tps = tp:tps'
+      tps == tp:tps'
     , reference-type-ok(s, ta, tp)
     , type-arguments-ok(s, tas, tps')
-  | [] -> tps = []
+  | [] -> tps == []
   }.
 
 
 // numeric-type-ok : scope * NumericType
 
 numeric-type-ok(s, nt, ty) :- nt match
-  { Byte()   -> ty = BYTE()
-  | Short()  -> ty = SHORT()
-  | Int()    -> ty = INT()
-  | Long()   -> ty = LONG()
-  | Char()   -> ty = CHAR()
-  | Float()  -> ty = FLOAT()
-  | Double() -> ty = DOUBLE()
+  { Byte()   -> ty == BYTE()
+  | Short()  -> ty == SHORT()
+  | Int()    -> ty == INT()
+  | Long()   -> ty == LONG()
+  | Char()   -> ty == CHAR()
+  | Float()  -> ty == FLOAT()
+  | Double() -> ty == DOUBLE()
   }.
 
 // sub-type : Type * Type
@@ -784,11 +794,11 @@ numeric-type-ok(s, nt, ty) :- nt match
 child-of(left, right) :- (left, right) match
   { (CLASS(left, _), CLASS(right, _)) -> {reaches, matches, ty}
       query left `EXT* as reaches
-      , filter reaches ((_, CLASS(cls, _)) where cls = right) matches
+      , filter reaches ((_, CLASS(cls, _)) where cls == right) matches
       , only(matches, ty) // non-ambiguous super
   | (CLASS(left, _), INTF(right, _))  -> {reaches, matches, ty}
       query left `EXT*`IMPL* as reaches
-      , filter reaches ((_, INTF(intf, _)) where intf = right) matches
+      , filter reaches ((_, INTF(intf, _)) where intf == right) matches
       , inhabited(matches)
   }.
 
@@ -817,18 +827,20 @@ sub-type(ty1, ty2) :- (ty1, ty2) match
 
 // s is the target scope of a path p
 tgt(p,s) :- p match
-  { End(x)       -> s = x
+  { End(x)       -> s == x
   | Edge(x,l,xs) -> tgt(xs,s)
   }.
 
 // s is the source scope of a path p
 src(p,s) :- p match
-  { End(x)       -> s = x
-  | Edge(x,l,xs) -> s = x
+  { End(x)       -> s == x
+  | Edge(x,l,xs) -> s == x
   }.
 
 // d is the datum of the target of p
 datum(p,d) :- {s} tgt(p, s), s -> d.
+
+empty(set) :- every set (x -> false).
 
 this-type(s, ty) :- {reached, visible, p}
   query s `LEX*`THIS as reached
@@ -844,7 +856,7 @@ super-type(s, ty) :- {self, tydecl, targs, cls, supers, p}
   , only(supers, p) 
   , p match { Edge(_, `EXT(targs'), p') ->  {name, decl}
       datum(p', (name, decl))
-    , ty = OBJECT(decl, targs') }.
+    , ty == OBJECT(decl, targs') }.
 
 return-type(s, ty) :- {reached, visible, p}
   query s `LEX*`RETURN as reached
@@ -853,13 +865,13 @@ return-type(s, ty) :- {reached, visible, p}
   , datum(p, ty).
 
 type-scope(ty, s_ty) :- ty match
-  { CLASS(s_cls,_) -> s_ty = s_cls
-  | INTF(s_intf,_) -> s_ty = s_intf
+  { CLASS(s_cls,_) -> s_ty == s_cls
+  | INTF(s_intf,_) -> s_ty == s_intf
   }.
 
 type-formal-params(ty, ftps) :- ty match
-  { CLASS(_,gens)  -> ftps = gens
-  | INTF(_,gens)   -> ftps = gens
+  { CLASS(_,gens)  -> ftps == gens
+  | INTF(_,gens)   -> ftps == gens
   }.
 
 is-class-or-interface-type(tp) :- tp match
