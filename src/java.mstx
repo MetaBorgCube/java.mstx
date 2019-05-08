@@ -89,7 +89,7 @@ type-parameter-decl-ok(s_cls, typeParameter, tp) :- typeParameter match
   }.
 
 type-bounds-ok(cts) :- cts match
-  { fst:cts' -> are-interfaces(cts') // first bound can be a class identifier
+  { fst:cts' -> are-interface-types(cts') // first bound can be a class identifier
   | []       -> true
   }.
 
@@ -848,9 +848,9 @@ super-type(s, ty) :- {self, tydecl, targs, cls, supers, p}
 
 return-type(s, ty) :- {reached, visible, p}
   query s `LEX*`RETURN as reached
-, min reached lexico(`RETURN < `LEX) visible
-, only(visible, p)
-, datum(p, ty).
+  , min reached lexico(`RETURN < `LEX) visible
+  , only(visible, p)
+  , datum(p, ty).
 
 type-scope(ty, s_ty) :- ty match
   { CLASS(s_cls,_) -> s_ty = s_cls
@@ -863,13 +863,16 @@ type-formal-params(ty, ftps) :- ty match
   }.
 
 is-class-or-interface-type(tp) :- tp match
-  { CLASS(_,_)  -> true
-  | INTF(_,_)   -> true
-  | otherwise   -> false
+  { OBJECT(CLASS(_,_),_)  -> true
+  | OBJECT(INTF(_,_),_)   -> true
+  | otherwise             -> false
   }.
 
-are-interfaces(tps) :- tps match
-  { INTF(_,_):tps -> are-interfaces(tps)
-  | []            -> true
-  | otherwise     -> false
+is-interface-type(tp) :- tp match
+  { OBJECT(INTF(_,_),_)   -> true
+  | _ -> false }.
+
+are-interface-types(tps) :- tps match
+  { tp:tps    -> is-interface-type(tp), are-interface-types(tps)
+  | []        -> true
   }.
