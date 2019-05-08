@@ -101,10 +101,11 @@ type-bounds-ok(cts) :- cts match
   | []       -> true
   }.
 
-decl-type-param(s, name, bounds, n_param) :- {n_bounds}
-      new n_param -> (name, TVAR(n_param))
+decl-type-param(s, name, bounds, n_param) :- {n_bounds, self}
+      self == TVAR(n_param)
+    , new n_param -> (name, self)
     , s -[ `TYPE ]-> n_param
-    , no-duplicate-type(s, name, n_param)
+    , no-duplicate-type(s, name, self)
     , new n_bounds -> bounds
     , n_param -[ `BOUNDS ]-> n_bounds.
 
