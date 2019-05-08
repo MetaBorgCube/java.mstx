@@ -829,15 +829,6 @@ super-type(s, ty) :- {self, tydecl, targs, cls, supers, p}
       datum(p', (name, decl))
     , ty = OBJECT(decl, targs') }.
 
-// super-class(s, ty) :- {ty', x}
-//   this-type(s, ty')
-// , ty' match
-//     { CLASS(s_cls) -> {reached, p}
-//         query s_cls `EXT as reached
-//       , only(reached, p)
-//       , datum(p, (x, ty))
-//     }.
-
 return-type(s, ty) :- {reached, visible, p}
   query s `LEX*`RETURN as reached
 , min reached lexico(`RETURN < `LEX) visible
