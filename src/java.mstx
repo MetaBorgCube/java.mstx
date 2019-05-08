@@ -487,10 +487,12 @@ field-access-ty(s, fa, ty) :- {p}
 	, query s_type `EXT*`VAR as reached
 	, unambiguous-field(reached, id, p)
 	, normalized-field-ty(p, targs, ty)
-    // | SuperField(id) -> {s_cls, reached}
-    // 	super-class(s, CLASS(s_cls))
-    // 	, query s_cls `EXT*`VAR as reached
-    // 	, unambiguous-field(reached, id, p)
+    | SuperField(id) -> {super, tydecl, targs, reached, gens}
+    	super-type(s, OBJECT(tydecl, targs))
+	, type-scope(tydecl, super)
+    	, query super `EXT*`VAR as reached
+    	, unambiguous-field(reached, id, p)
+	, normalized-field-ty(p, targs, ty)
     // | QSuperField(typeName, id) -> {ty_this, reached, s_cls, p, x}
     // 	this-type(s, ty_this)
     // 	, type-name-ok(s, typeName, p)
@@ -813,9 +815,19 @@ datum(p,d) :- {s} tgt(p, s), s -> d.
 
 this-type(s, ty) :- {reached, visible, p}
   query s `LEX*`THIS as reached
-, min reached lexico(`THIS < `LEX) visible
-, only(visible, p)
-, datum(p, ty).
+  , min reached lexico(`THIS < `LEX) visible
+  , only(visible, p)
+  , datum(p, ty).
+
+// TEST can one not use super for interface members?
+super-type(s, ty) :- {self, tydecl, targs, cls, supers, p}
+  this-type(s, OBJECT(tydecl, targs))
+  , type-scope(tydecl, cls)
+  , query cls `EXT as supers
+  , only(supers, p) 
+  , p match { Edge(_, `EXT(targs'), p') ->  {name, decl}
+      datum(p', (name, decl))
+    , ty = OBJECT(decl, targs') }.
 
 // super-class(s, ty) :- {ty', x}
 //   this-type(s, ty')
