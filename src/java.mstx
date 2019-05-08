@@ -37,17 +37,23 @@ class-declaration-ok(s, cd) :- cd match
 
 // normal-class-declaration-ok : scope * NormalClassDeclaration
 
-normal-class-declaration-ok(s, ncd) :- ncd match
-  { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations) -> {s_cls, tps, s_this, self}
-      new s_cls -> (id, self)
-    , self = CLASS(s_cls, tps)
-    , s_cls -[ `LEX ]-> s
-    , s -[ `TYPE ]-> s_cls
-    , maybe-super-class-ok(s, maybeSuperClass, s_cls)
-    , maybe-super-interfaces-ok(s, maybeSuperInterfaces, s_cls)
+normal-class-declaration-ok(s_pkg, ncd) :- ncd match
+  { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations) -> 
+    {s_cls, s_header, tps, s_this, self}
+      new s_header
+    , new s_cls -> (id, self)
 
     // generics
-    , maybe-type-parameter-decls-ok(s_cls, maybeTypeParameters, tps)
+    , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
+
+    // check the header
+    , maybe-super-class-ok(s_header, maybeSuperClass, s_cls)
+    , maybe-super-interfaces-ok(s_header, maybeSuperInterfaces, s_cls)
+
+    , self = CLASS(s_cls, tps)
+    , s_cls    -[ `LEX  ]-> s_header
+    , s_header -[ `LEX  ]-> s_pkg
+    , s_pkg    -[ `TYPE ]-> s_cls
 
     // this
     , new s_this -> OBJECT(self, tps)
@@ -95,23 +101,29 @@ decl-type-param(s, name, bounds, n_param) :- {n_bounds}
 
 // interface-declaration-ok : scope * InterfaceDeclaration
 
-interface-declaration-ok(s, id) :- id match
-  { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> {s_intf, s_this, self, tps}
-      new s_intf -> (id, self)
-    , self = INTF(s_intf, tps)
-    , s_intf -[ `LEX ]-> s
-    , s -[ `TYPE ]-> s_intf
-    , maybe-extends-interfaces-ok(s, maybeExtendsInterfaces, s_intf)
-    
-    // members
-    , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
+interface-declaration-ok(s_pkg, id) :- id match
+  { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> 
+    {s_header, s_intf, s_this, self, tps}
+      new s_header
+    , new s_intf -> (id, self)
 
     // generics
-    , maybe-type-parameter-decls-ok(s_intf, maybeTypeParameters, tps)
+    , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
+
+    // header
+    , maybe-extends-interfaces-ok(s_header, maybeExtendsInterfaces, s_intf)
+
+    , self = INTF(s_intf, tps)
+    , s_intf   -[ `LEX  ]-> s_header
+    , s_header -[ `LEX  ]-> s_pkg
+    , s_pkg    -[ `TYPE ]-> s_intf
 
     // this
     , new s_this -> OBJECT(self, tps)
     , s_intf -[ `THIS ]-> s_this
+    
+    // body
+    , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
   }. 
 
 // maybe-super-class-ok maps super-class-ok(*, list(*), *)
@@ -142,7 +154,7 @@ maybe-super-interfaces-ok(s, si, s_this) :- si match
 super-interfaces-ok(s, si, s_this) :- si match
   { SuperInterface(classTypes) -> {types}
       class-types-ok(s, classTypes, types)
-    , implement-interfaces(types, s)
+    , implement-interfaces(types, s_this)
   }.
 
 // implement-interfaces maps implement-interface(list(*), *)
@@ -155,7 +167,7 @@ implement-interfaces(is, s_this) :- is match
 // implement-interface : TYPE * scope
 
 implement-interface(i, s_this) :- i match
-  { OBJECT(INTF(s_intf), targs) -> s_this -[ `IMPL(targs) ]-> s_intf }.
+  { OBJECT(INTF(s_intf, _), targs) -> s_this -[ `IMPL(targs) ]-> s_intf }.
 
 // class-body-declarations-ok maps class-body-declaration-ok(*, list(*))
 
@@ -423,7 +435,7 @@ expression-ok(s, e, ty) :- e match
     , type-scope(ty_e, s_ty)
     , qualified-instance-ok(s, unqualifiedInstance, s_ty, ty)
   | E2L(literal) ->
-      literal-ok(s, literal, ty)
+      literal-type(s, literal, ty)
   | E2EN(en) -> {x, p}
       expression-name-ok(s, en, p)
     , normalized-field-ty(p, [], ty)
@@ -560,40 +572,40 @@ unambiguous-field(reached, id, p) :- {matched, visible}
       visible
 , only(visible, p).
 
-// literal-ok : scope * Literal * Type
+// literal-type : scope * Literal * Type
 
-literal-ok(s, l, ty) :- l match
-  { L2IL(il) -> int-literal-ok(s, il, ty)
-  | L2BL(bl) -> bool-literal-ok(s, bl, ty)
-  | L2SL(sl) -> string-literal-ok(s, sl, ty)
-  | L2NL(nl) -> null-literal-ok(s, nl, ty)
+literal-type(s, l, ty) :- l match
+  { L2IL(il) -> int-literal-type(s, il, ty)
+  | L2BL(bl) -> bool-literal-type(s, bl, ty)
+  | L2SL(sl) -> string-literal-type(s, sl, ty)
+  | L2NL(nl) -> null-literal-type(s, nl, ty)
   }.
 
-// bool-literal-ok : scope * BoolLiteral * Type
+// bool-literal-type : scope * BoolLiteral * Type
 
-bool-literal-ok(s, bl, ty) :- bl match
+bool-literal-type(s, bl, ty) :- bl match
   { True()  -> ty = BOOL()
   | False() -> ty = BOOL()
   }.
 
-// int-literal-ok : scope * IntLiteral * Type
+// int-literal-type : scope * IntLiteral * Type
 
-int-literal-ok(s, il, ty) :- il match
+int-literal-type(s, il, ty) :- il match
   { Deci(_) -> ty = INT()
   | Hexa(_) -> ty = INT()
   | Octa(_) -> ty = INT()
   | Bin(_)  -> ty = INT()
   }.
 
-// string-literal-ok : scope * StringLiteral * Type
+// string-literal-type : scope * StringLiteral * Type
 
-string-literal-ok(s, sl, ty) :- sl match
+string-literal-type(s, sl, ty) :- sl match
   { String() -> ty = STRING()
   }.
 
-// null-literal-ok : scope * NullLiteral * Type
+// null-literal-type : scope * NullLiteral * Type
 
-null-literal-ok(s, nl, ty) :- nl match
+null-literal-type(s, nl, ty) :- nl match
   { Null() -> ty = NULL()
   }.
 
@@ -769,11 +781,15 @@ numeric-type-ok(s, nt, ty) :- nt match
 
 // sub-type : Type * Type
 
-sub-type-decl(left, right) :- (left, right) match
+child-of(left, right) :- (left, right) match
   { (CLASS(left, _), CLASS(right, _)) -> {reaches, matches, ty}
       query left `EXT* as reaches
       , filter reaches ((_, CLASS(cls, _)) where cls = right) matches
-      , only(matches, ty)
+      , only(matches, ty) // non-ambiguous super
+  | (CLASS(left, _), INTF(right, _))  -> {reaches, matches, ty}
+      query left `EXT*`IMPL* as reaches
+      , filter reaches ((_, INTF(intf, _)) where intf = right) matches
+      , inhabited(matches)
   }.
 
 sub-types(txs, tys) :- (txs, tys) match
@@ -782,18 +798,19 @@ sub-types(txs, tys) :- (txs, tys) match
   }.
 
 sub-type(ty1, ty2) :- (ty1, ty2) match
-  { // (ty, ty)
-    (BYTE(), BYTE()) -> true
-  | (SHORT(), SHORT()) -> true
-  | (INT(), INT()) -> true
-  | (LONG(), LONG()) -> true
-  | (CHAR(), CHAR()) -> true
-  | (FLOAT(), FLOAT()) -> true
-  | (DOUBLE(), DOUBLE()) -> true
+  {
+    (BYTE(), BYTE())					-> true
+  | (SHORT(), SHORT())					-> true
+  | (INT(), INT())					-> true
+  | (LONG(), LONG())					-> true
+  | (CHAR(), CHAR())					-> true
+  | (FLOAT(), FLOAT())					-> true
+  | (DOUBLE(), DOUBLE())				-> true
 
-  | (OBJECT(tydecl1, tps), OBJECT(tydecl2, tps')) ->
-       sub-type-decl(tydecl1, tydecl2)
+  | (OBJECT(tydecl1, tps), OBJECT(tydecl2, tps'))	->
+       child-of(tydecl1, tydecl2)
      , sub-types(tps, tps')
+  | (NULL(), OBJECT(_,_))				-> true 
   }.
 
 // ----------------

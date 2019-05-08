@@ -29,15 +29,23 @@ do
 	echo "Expect fail"
     fi
 
+    # make sure to remove all class files to avoid incidental capture
+    rm -f $(dirname "$infile")/*.class
+
+    # run java compiler
     javac $infile 2>&1 | tee ${infile%.java}.javac.out 
     java_ok=${PIPESTATUS[0]}
 
+    # compile the file to an aterm
     jav=${infile%.java}.jav
     cp "$infile" $jav
     ${ATERM} ${infile%.java}.jav > ${infile%.java}.aterm 2> /dev/null
+
+    # run statix on the aterm
     statix $DIR/../src/java.mstx ${infile%.java}.aterm 2>&1 | tee ${infile%.java}.stx.out
     stx_ok=${PIPESTATUS[0]}
 
+    # compute test result by comparison
     if [ $java_ok -eq $stx_ok -a $java_ok -eq $positive ]
     then
 	echo -e "[\e[32mSUCCESS\e[0m] $infile"
