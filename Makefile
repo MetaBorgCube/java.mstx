@@ -57,6 +57,8 @@ javafront: lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-langu
 	@./tests/run $< | tee $@ | grep -i "failure\|success"
 
 test: $(TEST_TARGETS)
+test-results: 
+	find . -iname '*.result' -exec sh -c "cat {} | grep -i 'failure\|success'" \;
 
 ## Building
 
