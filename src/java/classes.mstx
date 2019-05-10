@@ -1,0 +1,84 @@
+import java.interfaces
+import java.generics
+import java.duplicates
+import java.types.references
+
+import java.classes.this
+import java.classes.fields
+import java.classes.methods
+
+// class-declaration-ok : scope * ClassDeclaration
+
+class-declaration-ok(s, cd) :- cd match
+  { CD2NCD(ncd) -> normal-class-declaration-ok(s, ncd)
+  }.
+
+// normal-class-declaration-ok : scope * NormalClassDeclaration
+
+normal-class-declaration-ok(s_pkg, ncd) :- ncd match
+  { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations) -> 
+    {s_cls, s_header, tps, s_this, self}
+      new s_header
+    , new s_cls -> (id, self)
+
+    // the declaration and prohibit duplicates
+    , s_pkg -[ `TYPE ]-> s_cls
+    , no-duplicate-type(s_pkg, id, self)
+
+    // generics
+    , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
+
+    // check the header
+    , maybe-super-class-ok(s_header, maybeSuperClass, s_cls)
+    , maybe-super-interfaces-ok(s_header, maybeSuperInterfaces, s_cls)
+
+    , self == CLASS(s_cls, tps)
+    , s_cls    -[ `LEX  ]-> s_header
+    , s_header -[ `LEX  ]-> s_pkg
+
+    // this
+    , new s_this -> OBJECT(self, tps)
+    , s_cls -[ `THIS ]-> s_this
+
+    // body
+    , class-body-declarations-ok(s_cls, classBodyDeclarations)
+  }. 
+
+// maybe-super-class-ok maps super-class-ok(*, list(*), *)
+
+maybe-super-class-ok(s, sc, s_this) :- sc match
+  { None()   -> true
+  | Some(sc) -> super-class-ok(s, sc, s_this)
+  }.
+
+// superclass-ok : scope * SuperClass * scope
+
+super-class-ok(s, sc, s_this) :- sc match
+  { SuperClass(classType) -> {s_super, targs, formals}
+      class-type-ok(s, classType, OBJECT(CLASS(s_super, formals), targs))
+    , s_this -[ `EXT(targs) ]-> s_super
+    // TODO see if targs matches gens
+  }.
+
+// class-body-declarations-ok maps class-body-declaration-ok(*, list(*))
+
+class-body-declarations-ok(s, cbds) :- cbds match
+  { []       -> true
+  | cbd:cbds -> class-body-declaration-ok(s, cbd), class-body-declarations-ok(s, cbds)
+  }.
+
+// class-body-declaration-ok : scope * ClassBodyDeclaration
+
+class-body-declaration-ok(s, cbd) :- cbd match
+  { CBD2CMD(cmd) -> class-member-declaration-ok(s, cmd)
+  }.
+
+// class-member-declaration-ok : scope * ClassMemberDeclaration
+
+class-member-declaration-ok(s, cmd) :- cmd match
+  { CMD2FD(fd) -> field-declaration-ok(s, fd)
+  | CMD2MD(md) -> method-declaration-ok(s, md)
+  | CMD2CD(cd) -> class-declaration-ok(s, cd)
+  | CMD2ID(id) -> interface-declaration-ok(s, id)
+  | SemiColon() -> true
+  }.

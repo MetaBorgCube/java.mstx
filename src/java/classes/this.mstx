@@ -1,0 +1,17 @@
+import stdlib.paths
+import java.types.references
+
+this-type(s, ty) :- {reached, visible, p}
+  query s `LEX*`THIS as reached
+  , min reached lexico(`THIS < `LEX) visible
+  , only(visible, p)
+  , datum(p, ty).
+
+super-type(s, ty) :- {self, tydecl, targs, cls, supers, p}
+  this-type(s, OBJECT(tydecl, targs))
+  , type-scope(tydecl, cls)
+  , query cls `EXT as supers
+  , only(supers, p) 
+  , p match { Edge(_, `EXT(targs'), p') ->  {name, decl}
+      datum(p', (name, decl))
+    , ty == OBJECT(decl, targs') }.

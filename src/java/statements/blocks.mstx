@@ -1,0 +1,29 @@
+import java.classes
+import java.statements
+import java.statements.locals
+
+// block-ok : scope * Block
+
+block-ok(s, b) :- b match
+  { Block(blockStatements) ->
+      block-statements-ok(s, blockStatements)
+  }.
+
+// block-statements-ok : scope * BlockStatement
+
+block-statements-ok(s, bs) :- bs match
+  { [] -> true
+  | BS2LVDS(lvds):bs -> {s_blk}
+      new s_blk
+    , s_blk -[ `LEX ]-> s
+    , local-variable-declaration-statement-ok(s_blk, lvds)
+    , block-statements-ok(s_blk, bs)
+  | BS2CD(cd):bs -> {s_blk}
+      new s_blk
+    , s_blk -[ `LEX ]-> s
+    , class-declaration-ok(s_blk, cd)
+    , block-statements-ok(s_blk, bs)
+  | BS2S(stmt):bs ->
+      statement-ok(s, stmt)
+    , block-statements-ok(s, bs)
+  }.

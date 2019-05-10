@@ -1,0 +1,81 @@
+import stdlib.paths
+
+import java.types.references
+import java.statements.blocks
+import java.statements.locals
+import java.classes.fields
+
+// method-declaration-ok : scope * MethodDeclaration
+
+method-declaration-ok(s, md) :- md match
+  { MethodDecl(methodModifiers, methodHeader, methodBody) -> {s_method, decl}
+      new s_method -> decl
+    , s_method -[ `LEX ]-> s
+    , s -[ `METHOD ]-> s_method
+    , method-header-ok(s_method, methodHeader, decl)
+    , method-body-ok(s_method, methodBody)
+  }.
+
+// method-header-ok : scope * MethodHeader * (Id, Type)
+
+method-header-ok(s, mh, decl) :- mh match
+  { MethodHeader(result, id, formalParams, annotatedDimsEmpty, maybeThrows) -> {ty, tys, s_ret}
+      decl == (id, METHOD(ty, tys))
+    , formal-params-ok(s, formalParams, tys)
+    , result-ok(s, result, ty)
+    , new s_ret -> ty
+    , s -[ `RETURN ]-> s_ret
+  }.
+
+// result-ok : scope * Result * tys * ty
+
+result-ok(s, r, ty) :- r match
+  { R2UT(ut) -> unann-type-ok(s, ut, ty)
+  | Void()   -> ty == VOID()
+  }.
+
+// formal-params-ok : scope * FormalParams
+
+formal-params-ok(s, fps, tys) :- fps match
+  { NoParams() ->
+      tys == []
+  | SingleParam(lfp) -> {ty}
+      last-formal-param-ok(s, lfp, ty)
+    , tys == ty:[]
+  | ParamList([], lfp) ->
+      formal-params-ok(s, SingleParam(lfp), tys)
+  | ParamList(fp:fps, lfp) -> {ty, tys'}
+      formal-param-ok(s, fp, ty)
+    , formal-params-ok(s, ParamList(fps, lfp), tys')
+    , tys == ty:tys'
+  }.
+
+last-formal-param-ok(s, lfp, ty) :- lfp match
+  { LFP2FP(fp) -> formal-param-ok(s, fp, ty)
+  }.
+
+formal-param-ok(s, fp, ty) :- fp match
+  { FormalParam(variableModifiers, unannType, varDeclId) ->
+      unann-type-ok(s, unannType, ty)
+    , var-decl-id-ok(varDeclId, s, ty)
+  }.
+
+// method-body-ok : scope * MethodBody
+
+method-body-ok(s, mb) :- mb match
+  { MB2B(b)        -> block-ok(s, b)
+  | NoMethodBody() -> true
+  }.
+
+return-type(s, ty) :- {reached, visible, p}
+  query s `LEX*`RETURN as reached
+  , min reached lexico(`RETURN < `LEX) visible
+  , only(visible, p)
+  , datum(p, ty).
+
+// method-name-ok : scope * MethodName * path
+
+method-name-ok(s, mn, p) :- mn match
+  { MethodName(id) ->
+      false
+  }.

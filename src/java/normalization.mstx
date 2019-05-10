@@ -1,0 +1,52 @@
+import stdlib.paths
+
+import java.types.references
+
+normalized-field-ty(p, targs, ty) :- p match
+  { Edge(s_type, `EXT(targs'), p) -> {params, ty', tyname, tydecl}
+      s_type -> (tyname, tydecl)
+    , type-formal-params(tydecl, params)
+    , normalized-field-ty(p, targs', ty')
+    , substn(targs, params, ty', ty)
+  | Edge(s_type, `IMPL(targs'), p) -> {params, tyname, tydecl, ty'}
+      s_type -> (tyname, tydecl)
+    , type-formal-params(tydecl, params)
+    , normalized-field-ty(p, targs', ty')
+    , substn(targs, params, ty', ty)
+  | Edge(s_type, `VAR, p) -> {params, tyname, tydecl, varname, varty}
+      s_type -> (tyname, tydecl)
+    , type-formal-params(tydecl, params)
+    , datum(p, (varname, varty))
+    , substn(targs, params, varty, ty)
+  | Edge(_, `LEX, p) -> normalized-field-ty(p, targs, ty)
+  }.
+
+substn(tys, vars, ty, out) :- ty match 
+  { OBJECT(TVAR(var), []) ->  {tydecl, params'}
+        substn-tvar(tys, vars, var, tydecl)
+      , out == tydecl
+  | OBJECT(tydecl, params) ->  {params'}
+        substn-all(tys, vars, params, params')
+      , out == OBJECT(tydecl, params')
+  }.
+
+substn-all(tys, vars, ins, outs) :- ins match 
+  { i:ins' -> {out, outs'} 
+        substn(tys, vars, i, out)
+      , substn-all(tys, vars, ins', outs')
+      , outs == out:outs'
+  | [] -> outs == []
+  }.
+
+substn-tvar(tys, vars, x, out) :- tys match
+  { ty:tys' -> {y, ys, out'} 
+        vars == y:ys
+      , subst-tvar(ty, y, x, out')
+      , substn(tys', ys, out', out)
+  | [] -> out == TVAR(x)
+  }.
+
+subst-tvar(ty, var, x, out) :- x match 
+  { z where z == var -> out == ty
+  | _               -> out == x
+  }.

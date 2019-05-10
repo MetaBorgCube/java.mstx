@@ -66,3 +66,4 @@ test-clean:
 	find -iname "*.class" -exec rm {} \;
 	find -iname "*.aterm" -exec rm {} \;
 	find -iname "*.result" -exec rm {} \;
+	find -iname "*.out" -exec rm {} \;

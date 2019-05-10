@@ -1,0 +1,17 @@
+import java.classes
+import java.interfaces
+
+// type-declarations-ok maps type-declaration-ok(*, list(*))
+
+type-declarations-ok(s, tds) :- tds match
+  { []     -> true
+  | td:tds -> type-declaration-ok(s, td), type-declarations-ok(s, tds)
+  }.
+
+// type-declaration-ok : scope * TypeDeclaration
+
+type-declaration-ok(s, td) :- td match
+  { TD2CD(cd) -> class-declaration-ok(s, cd)
+  | TD2ID(id) -> interface-declaration-ok(s, id)
+  | SemiColon() -> true
+  }.

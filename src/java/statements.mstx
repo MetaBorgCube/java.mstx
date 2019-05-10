@@ -1,0 +1,21 @@
+import java.statements.blocks
+import java.expressions
+import java.classes.methods
+import java.subtype
+
+// statement-ok : scope * Statements
+
+statement-ok(s, stmt) :- stmt match
+  { S2B(b) ->
+      block-ok(s, b)
+  | Empty() ->
+      true
+  | ExpressionStatement(e) -> {ty}
+      expression-ok(s, e, ty)
+  | Return() -> {ty_ret}
+      return-type(s, VOID())
+  | Return(e) -> {ty_e, ty_ret}
+      expression-ok(s, e, ty_e)
+    , return-type(s, ty_ret)
+    , sub-type(ty_e, ty_ret)
+  }.

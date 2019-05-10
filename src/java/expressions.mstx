@@ -1,0 +1,141 @@
+import stdlib.paths
+
+import java.literals
+import java.classes.this
+import java.types.references
+import java.subtype
+import java.normalization
+import java.expressions.variables
+
+// expressions-ok : scope * list(Expression) * list(Type)
+
+expressions-ok(s, es, tys) :- es match
+  { []   -> tys == []
+  | e:es -> {ty, tys'}
+      expression-ok(s, e, ty)
+    , expressions-ok(s, es, tys')
+    , tys == ty:tys'
+  }.
+
+// expression-ok : scope * Expression * Type
+
+expression-ok(s, e, ty) :- e match
+  { This() ->
+      this-type(s, ty)
+  | QThis(typeName) -> {x, p, ty_this}
+      type-name-ok(s, typeName, p)
+    , datum(p, (x, ty))
+    , this-type(s, ty_this)
+    , sub-type(ty_this, ty)
+  | CastPrimitive(primitiveType, e) -> {ty_e}
+      primitive-type-ok(s, primitiveType, ty)
+    , expression-ok(s, e, ty_e)
+    , sub-type(ty_e, ty)
+  | CastReference(referenceType, additionalBounds, e) -> {ty_e}
+      reference-type-ok(s, referenceType, ty)
+    , additionalBounds match
+        { []  -> true
+        | _:_ -> false // TODO create anonymous type
+        }
+    , expression-ok(s, e, ty_e)
+    , sub-type(ty_e, ty)
+  | Assign(lhs, e) -> {ty_e}
+      lhs-ok(s, lhs, ty)
+    , expression-ok(s, e, ty_e)
+    , sub-type(ty_e, ty)
+  | E2FA(fieldAccess) ->
+      field-access-ty(s, fieldAccess, ty)
+  | E2UI(unqualifiedInstance) ->
+      unqualified-instance-ok(s, unqualifiedInstance, ty)
+  | QualifiedInstance(e, unqualifiedInstance) -> {ty_e, s_ty}
+      expression-ok(s, e, ty_e)
+    , type-scope(ty_e, s_ty)
+    , qualified-instance-ok(s, unqualifiedInstance, s_ty, ty)
+  | E2L(literal) ->
+      literal-type(s, literal, ty)
+  | E2EN(en) -> {x, p}
+      expression-name-ok(s, en, p)
+    , normalized-field-ty(p, [], ty)
+  }.
+
+lhs-ok(s, lhs, ty) :- lhs match
+  { LHS2EN(expressionName) -> {x, p}
+      expression-name-ok(s, expressionName, p)
+    , datum(p, (x, ty))
+  | LHS2FA(fieldAccess) ->
+      field-access-ty(s, fieldAccess, ty)
+  }.
+
+// field-access-ty : scope * FieldAccess * Type
+
+field-access-ty(s, fa, ty) :- {p} 
+  fa match
+    { Field(e, id) -> {s_type, reached, targs, tydecl, gens}
+	expression-ok(s, e, OBJECT(tydecl, targs))
+	, type-scope(tydecl, s_type)
+	, query s_type `EXT*`VAR as reached
+	, unambiguous-field(reached, id, p)
+	, normalized-field-ty(p, targs, ty)
+    | SuperField(id) -> {super, tydecl, targs, reached, gens}
+    	super-type(s, OBJECT(tydecl, targs))
+	, type-scope(tydecl, super)
+    	, query super `EXT*`VAR as reached
+    	, unambiguous-field(reached, id, p)
+	, normalized-field-ty(p, targs, ty)
+    // | QSuperField(typeName, id) -> {ty_this, reached, s_cls, p, x}
+    // 	this-type(s, ty_this)
+    // 	, type-name-ok(s, typeName, p)
+    // 	, datum(p, (x, CLASS(s_cls)))
+    // 	, sub-type(ty_this, CLASS(s_cls))
+    // 	, query s_cls `EXT*`VAR as reached
+    // 	, unambiguous-field(reached, id, p)
+    }.
+
+unambiguous-field(reached, id, p) :- {matched, visible}
+  filter reached ((id', _) where id' == id) matched
+, min matched
+      lexico( `VAR < `LEX, `VAR < `EXT
+            , `EXT < `LEX
+            )
+      visible
+, only(visible, p).
+
+unqualified-instance-ok(s, ui, ty) :- ui match
+  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) -> {classType, tys}
+    // instantiated type
+      unqualified-instance-type-ok(s, id, qualifiedIds, ty)
+    // TODO type parameters
+    // TODO constructor checking
+    , expressions-ok(s, expressions, tys)
+  }.
+
+unqualified-instance-type-ok(s, id, qualifiedIds, ty) :- qualifiedIds match
+  { [] -> {reached}
+      query s `LEX*`EXT*`IMPL*`TYPE as reached
+    , unambiguous-class(reached, id, ty)
+  | QualifiedId(_, id'):qualifiedIds -> {ty', s_ty', reached}
+      unqualified-instance-type-ok(s, id, qualifiedIds, ty')
+    , type-scope(ty', s_ty')
+    , query s_ty' `TYPE as reached
+    , unambiguous-class(reached, id, ty)
+  }.
+
+qualified-instance-ok(s, ui, s_cls, ty) :- ui match
+  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) -> {classType, tys}
+    // instantiated type
+      qualified-instance-type-ok(s_cls, id, qualifiedIds, ty)
+    // TODO type parameters
+    // TODO constructor checking
+    , expressions-ok(s, expressions, tys)
+  }.
+
+qualified-instance-type-ok(s_ty, id, qualifiedIds, ty) :- qualifiedIds match
+  { [] -> {reached}
+      query s_ty `EXT*`IMPL*`TYPE as reached
+    , unambiguous-class(reached, id, ty)
+  | QualifiedId(_, id'):qualifiedIds -> {ty', s_ty', reached}
+      qualified-instance-type-ok(s_ty, id, qualifiedIds, ty')
+    , type-scope(ty', s_ty')
+    , query s_ty' `TYPE as reached
+    , unambiguous-class(reached, id, ty)
+  }.

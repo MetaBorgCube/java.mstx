@@ -1,0 +1,41 @@
+import java.duplicates
+import java.types.references
+
+maybe-type-parameter-decls-ok(s_cls, maybeTypeParameters, tps) :- maybeTypeParameters match
+  { None()                    -> tps == []
+  | Some(TypeParameters(ftps)) -> type-parameter-decls-ok(s_cls, ftps, tps)
+  }.
+
+// type parameter list
+// - scoping rules in sectio 6.3 and 6.4
+// - syntax in section 8.1.2
+// - extends section looks like (extends ClassOrInterfaceType|TypeVar [& InterfaceType]*)
+type-parameter-decls-ok(s_cls, typeParameters, tps) :- typeParameters match
+  { ftp:ftps -> {tp, tps'}
+      tps == tp:tps'
+    , type-parameter-decl-ok(s_cls, ftp, tp)
+    , type-parameter-decls-ok(s_cls, ftps, tps')
+  | [] -> tps == []
+  }.
+
+type-parameter-decl-ok(s_cls, typeParameter, tp) :- typeParameter match
+  { TypeParameter(annots, name) -> decl-type-param(s_cls, name, [], tp)
+  | TypeParameterExtendsClassType(annots, name, fcts) -> {cts}
+      class-types-ok(s_cls, fcts, cts)
+    , type-bounds-ok(cts)
+    , decl-type-param(s_cls, name, cts, tp)
+  }.
+
+type-bounds-ok(cts) :- cts match
+  { fst:cts' -> are-interface-types(cts') // first bound can be a class identifier
+  | []       -> true
+  }.
+
+decl-type-param(s, name, bounds, n_param) :- {n_bounds, self}
+      self == TVAR(n_param)
+    , new n_param -> (name, self)
+    , s -[ `TYPE ]-> n_param
+    , no-duplicate-type(s, name, self)
+    , new n_bounds -> bounds
+    , n_param -[ `BOUNDS ]-> n_bounds.
+

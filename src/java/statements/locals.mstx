@@ -1,0 +1,12 @@
+import java.types.references
+import java.classes.fields
+
+local-variable-declaration-statement-ok(s, lvds) :- lvds match
+  { LocVarDeclStm(lvd) -> local-variable-declaration-ok(s, lvd)
+  }.
+
+local-variable-declaration-ok(s, lvd) :- lvd match
+  { LocalVarDecl(variableModifiers, unannType, varDecls) -> {ty}
+      unann-type-ok(s, unannType, ty)
+    , var-decls-ok(s, varDecls, s, ty)
+  }.

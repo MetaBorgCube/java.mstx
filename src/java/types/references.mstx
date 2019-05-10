@@ -1,0 +1,154 @@
+import stdlib.paths
+
+// class-types-ok maps class-type-ok(*, list(*)) == list(*)
+
+class-types-ok(s, cts, tys) :- cts match
+  { ct:cts' -> {ty, tys'}
+       class-type-ok(s, ct, ty)
+     , class-types-ok(s, cts', tys')
+     , tys == ty:tys'
+  | []      -> tys == []
+  }.
+
+// class-type-ok : scope * ClassType -> TYPE
+
+class-type-ok(s, ct, ty) :- ct match
+  { ClassType(annotations, id, maybeTypeArguments) -> {reached, cls, tas}
+      query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
+      , unambiguous-class(reached, id, cls)
+      , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
+      , ty == OBJECT(cls, tas)
+  // | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {tydecl, targs, s_ty, reached, tas}
+  //       class-type-ok(s, classType, OBJECT(tydecl, targs))
+  //     , type-scope(tydecl, s_ty)
+  //     , query s_ty `EXT*`TYPE as reached // TODO direct type members only? Or also inherited?
+  //     , {inner_tydecl} 
+  //         unambiguous-class(reached, id, inner_tydecl)
+  //     	, maybe-type-arguments-ok(s, maybeTypeArguments, tas)
+  }.
+
+unambiguous-class(reached, id, ty) :- {matched, visible, p, x}
+  filter reached ((id', _) where id' == id) matched
+, min matched
+      lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL, `TYPE < `GENERICS
+            , `EXT < `LEX, `EXT < `IMPL, `EXT < `IMPL
+	    , `GENERICS < `LEX, `GENERICS < `EXT, `GENERICS < `IMPL
+            )
+      visible
+, only(visible, p)
+, datum(p, (x, ty)).
+
+// unann-type-ok : scope * UnannType
+
+unann-type-ok(s, ut, ty) :- ut match
+  { UT2UPT(upt) -> unann-primitive-type-ok(s, upt, ty)
+  | UT2URT(urt) -> unann-reference-type-ok(s, urt, ty)
+  }.
+
+// unann-primitive-type-ok : scope * UnannPrimitiveType
+
+unann-primitive-type-ok(s, upt, ty) :- upt match
+  { NumericType(nt) -> numeric-type-ok(s, nt, ty)
+  | BooleanType()   -> ty == BOOLEAN()
+  }.
+
+// unann-reference-type-ok : scope * UnannReferenceType
+
+unann-reference-type-ok(s, urt, ty) :- urt match
+  { URT2UCT(uct) -> unann-class-type-ok(s, uct, ty)
+  }.
+
+// unann-class-type-ok : scope * UnannClassType
+
+unann-class-type-ok(s, urt, ty) :- urt match
+  { ClassType(id, maybeTypeArguments) -> {reached, cls, tas}
+      query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
+    , unambiguous-class(reached, id, cls)
+    , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
+    , ty == OBJECT(cls, tas)
+  // | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
+  //     unann-class-type-ok(s, unannClassType, ty')
+  //   , type-scope(ty', s_ty')
+  //   , query s_ty' `TYPE as reached
+  //   , unambiguous-class(reached, id, ty)
+  }.
+
+// primitive-type-ok : scope * PrimitiveType
+
+primitive-type-ok(s, pt, ty) :- pt match
+  { NumericType(annotations, nt) -> numeric-type-ok(s, nt, ty)
+  | BooleanType(annotations)     -> ty == BOOLEAN()
+  }.
+
+// reference-type-ok : scope * ReferenceType
+
+reference-type-ok(s, rt, ty) :- rt match
+  { RT2CT(ct) -> class-type-ok(s, ct, ty)
+  }.
+
+// numeric-type-ok : scope * NumericType
+
+numeric-type-ok(s, nt, ty) :- nt match
+  { Byte()   -> ty == BYTE()
+  | Short()  -> ty == SHORT()
+  | Int()    -> ty == INT()
+  | Long()   -> ty == LONG()
+  | Char()   -> ty == CHAR()
+  | Float()  -> ty == FLOAT()
+  | Double() -> ty == DOUBLE()
+  }.
+
+maybe-type-arguments-ok(s, maybeTypeArguments, tps) :- maybeTypeArguments match
+  { None()                    -> tps == []
+  | Some(TypeArguments(ftps)) -> type-arguments-ok(s, ftps, tps)
+  }.
+
+type-arguments-ok(s, typeArguments, tps) :- typeArguments match
+  { ta:tas -> {tp, tps'}
+      tps == tp:tps'
+    , reference-type-ok(s, ta, tp)
+    , type-arguments-ok(s, tas, tps')
+  | [] -> tps == []
+  }.
+
+// type-name-ok : scope * TypeName * path
+
+type-name-ok(s, tn, p) :- tn match
+  { TypeName(id) -> {reached, matched, visible}
+      query s `LEX*`EXT*`IMPL*`TYPE as reached
+    , filter reached ((id', _) where id' == id) matched
+    , min matched
+          lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
+                , `EXT < `IMPL, `EXT < `LEX
+                , `IMPL < `LEX
+                )
+          visible
+    , only(visible, p)
+  | TypeName(packageOrTypeName, id) ->
+      false
+  }.
+
+is-class-or-interface-type(tp) :- tp match
+  { OBJECT(CLASS(_,_),_)  -> true
+  | OBJECT(INTF(_,_),_)   -> true
+  | otherwise             -> false
+  }.
+
+is-interface-type(tp) :- tp match
+  { OBJECT(INTF(_,_),_)   -> true
+  | _ -> false }.
+
+are-interface-types(tps) :- tps match
+  { tp:tps    -> is-interface-type(tp), are-interface-types(tps)
+  | []        -> true
+  }.
+
+type-scope(ty, s_ty) :- ty match
+  { CLASS(s_cls,_) -> s_ty == s_cls
+  | INTF(s_intf,_) -> s_ty == s_intf
+  }.
+
+type-formal-params(ty, ftps) :- ty match
+  { CLASS(_,gens)  -> ftps == gens
+  | INTF(_,gens)   -> ftps == gens
+  }.

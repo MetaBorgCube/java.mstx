@@ -1,0 +1,100 @@
+import java.duplicates
+import java.generics
+import java.types.references
+import java.classes.methods
+
+// interface-declaration-ok : scope * InterfaceDeclaration
+
+interface-declaration-ok(s_pkg, id) :- id match
+  { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> 
+    {s_header, s_intf, s_this, self, tps}
+      new s_header
+    , new s_intf -> (id, self)
+    , no-duplicate-type(s_pkg, id, self)
+
+    // generics
+    , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
+
+    // header
+    , maybe-extends-interfaces-ok(s_header, maybeExtendsInterfaces, s_intf)
+
+    , self == INTF(s_intf, tps)
+    , s_intf   -[ `LEX  ]-> s_header
+    , s_header -[ `LEX  ]-> s_pkg
+    , s_pkg    -[ `TYPE ]-> s_intf
+
+    // this
+    , new s_this -> OBJECT(self, tps)
+    , s_intf -[ `THIS ]-> s_this
+    
+    // body
+    , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
+  }. 
+
+
+// maybe-super-interfaces-ok maps super-interfaces-ok(*, list(*), *)
+
+maybe-super-interfaces-ok(s, si, s_this) :- si match
+  { None()   -> true
+  | Some(si) -> super-interfaces-ok(s, si, s_this)
+  }.
+
+// super-interfaces-ok : scope * SuperInterfaces * scope
+
+super-interfaces-ok(s, si, s_this) :- si match
+  { SuperInterface(classTypes) -> {types}
+      class-types-ok(s, classTypes, types)
+    , implement-interfaces(types, s_this)
+  }.
+
+// interface-member-declarations-ok maps interface-member-declaration-ok(*, list(*))
+
+interface-member-declarations-ok(s, imds) :- imds match
+  { []       -> true
+  | imd:imds -> interface-member-declaration-ok(s, imd), interface-member-declarations-ok(s, imds)
+  }.
+
+// interface-member-declaration-ok : scope * InterfaceMemberDeclaration
+
+interface-member-declaration-ok(s, imd) :- imd match
+  { IMD2IMD(imd) -> interface-method-declaration-ok(s, imd)
+  | IMD2CD(cd)   -> false // class-declaration-ok(s, cd) // Only static classes here right?
+  | IMD2ID(id)   -> interface-declaration-ok(s, id)
+  | SemiColon()  -> true
+  }.
+
+interface-method-declaration-ok(s, imd) :- imd match
+  { AbstractMethodDec(interfaceMethodModifiers, methodHeader, methodBody) -> {s_method, decl}
+      new s_method -> decl
+    , s_method -[ `LEX ]-> s
+    , s -[ `METHOD ]-> s_method
+    , method-header-ok(s_method, methodHeader, decl)
+    , method-body-ok(s_method, methodBody)
+  }.
+
+// implement-interfaces maps implement-interface(list(*), *)
+
+implement-interfaces(is, s_this) :- is match
+  { []   -> true
+  | i:is -> implement-interface(i, s_this), implement-interfaces(is, s_this)
+  }.
+
+// implement-interface : TYPE * scope
+
+implement-interface(i, s_this) :- i match
+  { OBJECT(INTF(s_intf, _), targs) -> s_this -[ `IMPL(targs) ]-> s_intf }.
+
+// maybe-extendsinterfaces-ok maps extends-interfaces-ok(*, list(*))
+
+maybe-extends-interfaces-ok(s, ei, s_this) :- ei match
+  { None()   -> true
+  | Some(ei) -> extends-interfaces-ok(s, ei, s_this)
+  }.
+
+// extends-interfaces-ok : scope * ExtendsInterfaces * scope
+
+extends-interfaces-ok(s, ei, s_this) :- ei match
+  { ExtendsInterfaces(classTypes) -> {types}
+      class-types-ok(s, classTypes, types)
+    , implement-interfaces(types, s_this)
+  }.
