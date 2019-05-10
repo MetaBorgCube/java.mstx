@@ -1,3 +1,5 @@
+import stdlib.sets
+
 import java.interfaces
 import java.generics
 import java.duplicates
@@ -13,6 +15,11 @@ class-declaration-ok(s, cd) :- cd match
   { CD2NCD(ncd) -> normal-class-declaration-ok(s, ncd)
   }.
 
+no-class-cycle(s, type) :- {parents, matches}
+  query s `EXT+ as parents
+  , filter parents ((name, cls) where cls == type) matches
+  , empty(matches).
+
 // normal-class-declaration-ok : scope * NormalClassDeclaration
 
 normal-class-declaration-ok(s_pkg, ncd) :- ncd match
@@ -24,6 +31,7 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
     // the declaration and prohibit duplicates
     , s_pkg -[ `TYPE ]-> s_cls
     , no-duplicate-type(s_pkg, id, self)
+    , no-class-cycle(s_cls, self)
 
     // generics
     , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)

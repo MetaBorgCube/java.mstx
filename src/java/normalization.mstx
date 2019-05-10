@@ -48,5 +48,5 @@ substn-tvar(tys, vars, x, out) :- tys match
 
 subst-tvar(ty, var, x, out) :- x match 
   { z where z == var -> out == ty
-  | _               -> out == x
+  | _                -> out == x
   }.
