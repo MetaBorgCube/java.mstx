@@ -28,6 +28,15 @@ substn(tys, vars, ty, out) :- ty match
   | OBJECT(tydecl, params) ->  {params'}
         substn-all(tys, vars, params, params')
       , out == OBJECT(tydecl, params')
+
+  // constants
+  | BYTE()	-> out == BYTE()
+  | SHORT()	-> out == SHORT()
+  | INT()	-> out == INT()
+  | LONG()	-> out == LONG()
+  | CHAR()	-> out == CHAR()
+  | FLOAT()	-> out == FLOAT()
+  | DOUBLE()	-> out == DOUBLE()
   }.
 
 substn-all(tys, vars, ins, outs) :- ins match 

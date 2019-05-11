@@ -1,7 +1,14 @@
+import stdlib.sets
+
 import java.duplicates
 import java.generics
 import java.types.references
 import java.classes.methods
+
+no-implements-cycle(s, type) :- {parents, matches}
+  query s `IMPL+ as parents
+  , filter parents ((name, intf) where intf == type) matches
+  , empty(matches).
 
 // interface-declaration-ok : scope * InterfaceDeclaration
 
@@ -11,6 +18,7 @@ interface-declaration-ok(s_pkg, id) :- id match
       new s_header
     , new s_intf -> (id, self)
     , no-duplicate-type(s_pkg, id, self)
+    , no-implements-cycle(s_intf, self)
 
     // generics
     , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
