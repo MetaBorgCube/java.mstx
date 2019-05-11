@@ -42,7 +42,7 @@ do
     ${ATERM} ${infile%.java}.jav > ${infile%.java}.aterm 2> /dev/null
 
     # run statix on the aterm
-    statix -I $DIR/../src/ java ${infile%.java}.aterm 2>&1 | tee ${infile%.java}.stx.out
+    statix check -I $DIR/../src/ java ${infile%.java}.aterm 2>&1 | tee ${infile%.java}.stx.out
     stx_ok=${PIPESTATUS[0]}
 
     # compute test result by comparison
