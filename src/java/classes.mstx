@@ -23,7 +23,7 @@ no-class-cycle(s, type) :- {parents, matches}
 // normal-class-declaration-ok : scope * NormalClassDeclaration
 
 normal-class-declaration-ok(s_pkg, ncd) :- ncd match
-  { ClassDeclaration(classModifiers, id, maybeTypeParameters, maybeSuperClass, maybeSuperInterfaces, classBodyDeclarations) -> 
+  { ClassDeclaration(modifiers, id, mTypeParameters, mSuperClass, mSuperInterfaces, declarations) -> 
     {s_cls, s_header, tps, s_this, self}
       new s_header
     , new s_cls -> (id, self)
@@ -34,11 +34,11 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
     , no-class-cycle(s_cls, self)
 
     // generics
-    , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
+    , maybe-type-parameter-decls-ok(s_header, mTypeParameters, tps)
 
     // check the header
-    , maybe-super-class-ok(s_header, maybeSuperClass, s_cls)
-    , maybe-super-interfaces-ok(s_header, maybeSuperInterfaces, s_cls)
+    , maybe-super-class-ok(s_header, mSuperClass, s_cls)
+    , maybe-super-interfaces-ok(s_header, mSuperInterfaces, s_cls)
 
     , self == CLASS(s_cls, tps)
     , s_cls    -[ `LEX  ]-> s_header
@@ -49,7 +49,7 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
     , s_cls -[ `THIS ]-> s_this
 
     // body
-    , class-body-declarations-ok(s_cls, classBodyDeclarations)
+    , class-body-declarations-ok(s_cls, declarations)
   }. 
 
 // maybe-super-class-ok maps super-class-ok(*, list(*), *)

@@ -13,11 +13,14 @@ normalized-field-ty(p, targs, ty) :- p match
     , type-formal-params(tydecl, params)
     , normalized-field-ty(p, targs', ty')
     , substn(targs, params, ty', ty)
-  | Edge(s_type, `VAR, p) -> {params, tyname, tydecl, varname, varty}
+  | Edge(s_type, `FIELD, p) -> {params, tyname, tydecl, varname, varty}
       s_type -> (tyname, tydecl)
     , type-formal-params(tydecl, params)
     , datum(p, (varname, varty))
     , substn(targs, params, varty, ty)
+  | Edge(s_local, `VAR, p) -> {params, tyname, tydecl, varname, varty}
+      datum(p, (varname, ty))
+    , targs == []
   | Edge(_, `LEX, p) -> normalized-field-ty(p, targs, ty)
   }.
 

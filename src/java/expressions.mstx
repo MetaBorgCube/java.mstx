@@ -49,7 +49,7 @@ expression-ok(s, e, ty) :- e match
       unqualified-instance-ok(s, unqualifiedInstance, ty)
   | QualifiedInstance(e, unqualifiedInstance) -> {ty_e, s_ty}
       expression-ok(s, e, ty_e)
-    , type-scope(ty_e, s_ty)
+    , instance-scope(ty_e, s_ty)
     , qualified-instance-ok(s, unqualifiedInstance, s_ty, ty)
   | E2L(literal) ->
       literal-type(s, literal, ty)
@@ -101,41 +101,48 @@ unambiguous-field(reached, id, p) :- {matched, visible}
 , only(visible, p).
 
 unqualified-instance-ok(s, ui, ty) :- ui match
-  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) -> {classType, tys}
+  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
+    {classType, tys, tas, tydecl}
     // instantiated type
-      unqualified-instance-type-ok(s, id, qualifiedIds, ty)
-    // TODO type parameters
-    // TODO constructor checking
+      unqualified-instance-type-ok(s, id, qualifiedIds, tydecl)
+    , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
+
     , expressions-ok(s, expressions, tys)
+    // TODO constructor checking
+
+    , ty == OBJECT(tydecl, tas)
   }.
 
 unqualified-instance-type-ok(s, id, qualifiedIds, ty) :- qualifiedIds match
   { [] -> {reached}
       query s `LEX*`EXT*`IMPL*`TYPE as reached
     , unambiguous-class(reached, id, ty)
-  | QualifiedId(_, id'):qualifiedIds -> {ty', s_ty', reached}
-      unqualified-instance-type-ok(s, id, qualifiedIds, ty')
-    , type-scope(ty', s_ty')
+  | QualifiedId(_, id'):qualifiedIds -> {reached, tydecl, tas, s_ty'}
+      unqualified-instance-type-ok(s, id, qualifiedIds, OBJECT(tydecl, tas))
+    , type-scope(tydecl, s_ty')
     , query s_ty' `TYPE as reached
     , unambiguous-class(reached, id, ty)
   }.
 
 qualified-instance-ok(s, ui, s_cls, ty) :- ui match
-  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) -> {classType, tys}
+  { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
+    {classType, tys, tydecl, tas}
     // instantiated type
-      qualified-instance-type-ok(s_cls, id, qualifiedIds, ty)
-    // TODO type parameters
-    // TODO constructor checking
+      qualified-instance-type-ok(s_cls, id, qualifiedIds, tydecl)
+    , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
     , expressions-ok(s, expressions, tys)
+    // TODO constructor checking
+
+    , ty == OBJECT(tydecl, tas)
   }.
 
 qualified-instance-type-ok(s_ty, id, qualifiedIds, ty) :- qualifiedIds match
   { [] -> {reached}
       query s_ty `EXT*`IMPL*`TYPE as reached
     , unambiguous-class(reached, id, ty)
-  | QualifiedId(_, id'):qualifiedIds -> {ty', s_ty', reached}
-      qualified-instance-type-ok(s_ty, id, qualifiedIds, ty')
-    , type-scope(ty', s_ty')
+  | QualifiedId(_, id'):qualifiedIds -> {s_ty', tydecl, tas, reached}
+      qualified-instance-type-ok(s_ty, id, qualifiedIds, OBJECT(tydecl, tas))
+    , type-scope(tydecl , s_ty')
     , query s_ty' `TYPE as reached
     , unambiguous-class(reached, id, ty)
   }.

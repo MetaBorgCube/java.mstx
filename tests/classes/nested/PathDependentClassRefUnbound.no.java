@@ -1,4 +1,5 @@
-class A { class B {} }
+class A {
+}
 class B {}
 class C {
     void m() {

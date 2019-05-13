@@ -4,6 +4,7 @@ import java.types.references
 import java.statements.blocks
 import java.statements.locals
 import java.classes.fields
+import java.expressions.variables
 
 // method-declaration-ok : scope * MethodDeclaration
 

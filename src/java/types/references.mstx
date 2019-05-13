@@ -61,16 +61,20 @@ unann-reference-type-ok(s, urt, ty) :- urt match
 // unann-class-type-ok : scope * UnannClassType
 
 unann-class-type-ok(s, urt, ty) :- urt match
-  { ClassType(id, maybeTypeArguments) -> {reached, cls, tas}
+  { ClassType(id, maybeTypeArguments) ->
+    {reached, cls, tas}
       query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
     , unambiguous-class(reached, id, cls)
     , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
     , ty == OBJECT(cls, tas)
-  // | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {ty', s_ty', reached}
-  //     unann-class-type-ok(s, unannClassType, ty')
-  //   , type-scope(ty', s_ty')
-  //   , query s_ty' `TYPE as reached
-  //   , unambiguous-class(reached, id, ty)
+  | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) ->
+    {tydecl, tas, tas', s', reached, cls}
+      unann-class-type-ok(s, unannClassType, OBJECT(tydecl, tas))
+    , type-scope(tydecl, s')
+    , query s' `TYPE as reached
+    , unambiguous-class(reached, id, cls)
+    , maybe-type-arguments-ok(s, maybeTypeArguments, tas')
+    , ty == OBJECT(cls, tas)
   }.
 
 // primitive-type-ok : scope * PrimitiveType
@@ -147,6 +151,8 @@ type-scope(ty, s_ty) :- ty match
   { CLASS(s_cls,_) -> s_ty == s_cls
   | INTF(s_intf,_) -> s_ty == s_intf
   }.
+
+instance-scope(ty, s_ty) :- ty match { OBJECT(tydecl,_) -> type-scope(tydecl, s_ty) }.
 
 type-formal-params(ty, ftps) :- ty match
   { CLASS(_,gens)  -> ftps == gens

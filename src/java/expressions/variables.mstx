@@ -1,3 +1,6 @@
+import java.types.references
+import java.expressions
+
 // expression-name-ok : scope * ExpressionName * path
 
 expression-name-ok(s, en, p) :- en match
@@ -12,4 +15,36 @@ expression-name-ok(s, en, p) :- en match
     , only(visible, p)
   | ExpressionName(ambiguousName, id) ->
       false
+  }.
+
+// var-decls-ok : scope * list(VarDecl) * Type
+
+var-decls-ok(s, vds, s_def, ty) :- vds match
+  { []     -> true
+  | vd:vds -> var-decl-ok(s, vd, s_def, ty), var-decls-ok(s, vds, s_def, ty)
+  }.
+
+// var-decl-ok : scope * VarDecl * Type
+
+var-decl-ok(s, vd, s_def, ty) :- vd match
+  { VariableDeclInit(vdi, vi) ->
+      var-decl-id-ok(vdi, s_def, ty)
+    , variable-initializer-ok(s, vi, ty)
+  | VD2VDI(vdi) ->
+      var-decl-id-ok(vdi, s_def, ty)
+  }.
+
+// var-decl-id-ok : VarDeclId * scope * Type
+
+var-decl-id-ok(vdi, s_def, ty) :- vdi match
+  { VariableDecl(id) -> {s_var}
+      new s_var -> (id, ty)
+    , s_def -[ `VAR ]-> s_var
+  }.
+
+// variable-initializer-ok : scope * VariableInitializer * Type
+
+variable-initializer-ok(s, vi, ty) :- vi match
+  { VI2E(e) -> 
+      expression-ok(s, e, ty)
   }.
