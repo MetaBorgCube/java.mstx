@@ -33,19 +33,19 @@ class Pair<T, S> {
     Pair(T f, S s) { fst = f; snd = s; }
 }
 
-class Test {
-    public static void main(String[] args) {
-	Seq<String> strs =
-	    new Seq<String>("a", new Seq<String>("b", new Seq<String>()));
-	Seq<Number> nums =
-	    new Seq<Number>(
-			    new Integer(1),
-			    new Seq<Number>(new Double(1.5),
-					    new Seq<Number>()));
-	Seq<String>.Zipper<Number> zipper =
-	    strs.new Zipper<Number>();
+// class Test {
+//     public static void main(String[] args) {
+// 	Seq<String> strs =
+// 	    new Seq<String>("a", new Seq<String>("b", new Seq<String>()));
+// 	Seq<Number> nums =
+// 	    new Seq<Number>(
+// 			    new Integer(1),
+// 			    new Seq<Number>(new Double(1.5),
+// 					    new Seq<Number>()));
+// 	Seq<String>.Zipper<Number> zipper =
+// 	    strs.new Zipper<Number>();
 
-	Seq<Pair<String,Number>> combined =
-	    zipper.zip(nums);
-    }
-}
+// 	Seq<Pair<String,Number>> combined =
+// 	    zipper.zip(nums);
+//     }
+// }
