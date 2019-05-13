@@ -5,7 +5,7 @@ import java.expressions
 
 expression-name-ok(s, en, p) :- en match
   { ExpressionName(id) -> {reached, matched, visible}
-      query s `LEX*`EXT*`VAR as reached
+      query s `LEX*`EXT*(`VAR|`FIELD) as reached
     , filter reached ((id', _) where id' == id) matched
     , min matched
           lexico( `VAR < `LEX, `VAR < `EXT

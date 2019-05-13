@@ -73,13 +73,13 @@ field-access-ty(s, fa, ty) :- {p}
     { Field(e, id) -> {s_type, reached, targs, tydecl, gens}
 	expression-ok(s, e, OBJECT(tydecl, targs))
 	, type-scope(tydecl, s_type)
-	, query s_type `EXT*`VAR as reached
+	, query s_type `EXT*`FIELD as reached
 	, unambiguous-field(reached, id, p)
 	, normalized-field-ty(p, targs, ty)
     | SuperField(id) -> {super, tydecl, targs, reached, gens}
     	super-type(s, OBJECT(tydecl, targs))
 	, type-scope(tydecl, super)
-    	, query super `EXT*`VAR as reached
+    	, query super `EXT*`FIELD as reached
     	, unambiguous-field(reached, id, p)
 	, normalized-field-ty(p, targs, ty)
     // | QSuperField(typeName, id) -> {ty_this, reached, s_cls, p, x}
