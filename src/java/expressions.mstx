@@ -120,8 +120,7 @@ unqualified-instance-type-ok(s, id, qualifiedIds, ty) :- qualifiedIds match
   | QualifiedId(_, id'):qualifiedIds -> {reached, tydecl, tas, s_ty'}
       unqualified-instance-type-ok(s, id, qualifiedIds, OBJECT(tydecl, tas))
     , type-scope(tydecl, s_ty')
-    , query s_ty' `TYPE as reached
-    , unambiguous-class(reached, id, ty)
+    , inner-class-type(s_ty', id, ty)
   }.
 
 qualified-instance-ok(s, ui, s_cls, ty) :- ui match
@@ -143,6 +142,5 @@ qualified-instance-type-ok(s_ty, id, qualifiedIds, ty) :- qualifiedIds match
   | QualifiedId(_, id'):qualifiedIds -> {s_ty', tydecl, tas, reached}
       qualified-instance-type-ok(s_ty, id, qualifiedIds, OBJECT(tydecl, tas))
     , type-scope(tydecl , s_ty')
-    , query s_ty' `TYPE as reached
-    , unambiguous-class(reached, id, ty)
+    , inner-class-type(s_ty', id, ty)
   }.

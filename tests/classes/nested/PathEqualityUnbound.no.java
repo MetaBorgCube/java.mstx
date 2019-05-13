@@ -3,7 +3,7 @@ class A {
 }
 
 class B extends A {}
-class C extends A {}
+class C {}
 
 class Test {
     void m() {

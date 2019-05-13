@@ -71,8 +71,7 @@ unann-class-type-ok(s, urt, ty) :- urt match
     {tydecl, tas, tas', s', reached, cls}
       unann-class-type-ok(s, unannClassType, OBJECT(tydecl, tas))
     , type-scope(tydecl, s')
-    , query s' `TYPE as reached
-    , unambiguous-class(reached, id, cls)
+    , inner-class-type(s', id, cls)
     , maybe-type-arguments-ok(s, maybeTypeArguments, tas')
     , ty == OBJECT(cls, tas)
   }.
@@ -158,3 +157,7 @@ type-formal-params(ty, ftps) :- ty match
   { CLASS(_,gens)  -> ftps == gens
   | INTF(_,gens)   -> ftps == gens
   }.
+
+inner-class-type(s, id, ty) :- {reached}
+  query s `EXT*`TYPE as reached
+  , unambiguous-class(reached, id, ty).
