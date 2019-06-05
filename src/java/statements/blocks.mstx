@@ -13,17 +13,17 @@ block-ok(s, b) :- b match
 
 block-statements-ok(s, bs) :- bs match
   { [] -> true
-  | BS2LVDS(lvds):bs -> {s_blk}
+  | LocalVariableDeclarationStatement2BlockStatement(lvds):bs -> {s_blk}
       new s_blk
     , s_blk -[ `LEX ]-> s
     , local-variable-declaration-statement-ok(s_blk, lvds)
     , block-statements-ok(s_blk, bs)
-  | BS2CD(cd):bs -> {s_blk}
+  | ClassDeclaration2BlockStatement(cd):bs -> {s_blk}
       new s_blk
     , s_blk -[ `LEX ]-> s
     , class-declaration-ok(s_blk, cd)
     , block-statements-ok(s_blk, bs)
-  | BS2S(stmt):bs ->
+  | Statement2BlockStatement(stmt):bs ->
       statement-ok(s, stmt)
     , block-statements-ok(s, bs)
   }.

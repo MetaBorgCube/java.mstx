@@ -6,7 +6,7 @@ import java.subtype
 // statement-ok : scope * Statements
 
 statement-ok(s, stmt) :- stmt match
-  { S2B(b) ->
+  { Block2Statement(b) ->
       block-ok(s, b)
   | Empty() ->
       true

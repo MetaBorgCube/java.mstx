@@ -31,7 +31,7 @@ method-header-ok(s, mh, decl) :- mh match
 // result-ok : scope * Result * tys * ty
 
 result-ok(s, r, ty) :- r match
-  { R2UT(ut) -> unann-type-ok(s, ut, ty)
+  { UnannType2Result(ut) -> unann-type-ok(s, ut, ty)
   | Void()   -> ty == VOID()
   }.
 
@@ -52,7 +52,7 @@ formal-params-ok(s, fps, tys) :- fps match
   }.
 
 last-formal-param-ok(s, lfp, ty) :- lfp match
-  { LFP2FP(fp) -> formal-param-ok(s, fp, ty)
+  { FormalParam2LastFormalParam(fp) -> formal-param-ok(s, fp, ty)
   }.
 
 formal-param-ok(s, fp, ty) :- fp match
@@ -64,7 +64,7 @@ formal-param-ok(s, fp, ty) :- fp match
 // method-body-ok : scope * MethodBody
 
 method-body-ok(s, mb) :- mb match
-  { MB2B(b)        -> block-ok(s, b)
+  { Block2MethodBody(b)        -> block-ok(s, b)
   | NoMethodBody() -> true
   }.
 

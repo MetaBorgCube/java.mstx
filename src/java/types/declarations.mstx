@@ -11,7 +11,7 @@ type-declarations-ok(s, tds) :- tds match
 // type-declaration-ok : scope * TypeDeclaration
 
 type-declaration-ok(s, td) :- td match
-  { TD2CD(cd) -> class-declaration-ok(s, cd)
-  | TD2ID(id) -> interface-declaration-ok(s, id)
+  { ClassDeclaration2TypeDeclaration(cd) -> class-declaration-ok(s, cd)
+  | InterfaceDeclaration2TypeDeclaration(id) -> interface-declaration-ok(s, id)
   | SemiColon() -> true
   }.
