@@ -1,10 +1,10 @@
 // literal-type : scope * Literal * Type
 
 literal-type(s, l, ty) :- l match
-  { IntLiteral2Literal(il) -> int-literal-type(s, il, ty)
-  | BoolLiteral2Literal(bl) -> bool-literal-type(s, bl, ty)
-  | StringLiteral2Literal(sl) -> string-literal-type(s, sl, ty)
-  | NullLiteral2Literal(nl) -> null-literal-type(s, nl, ty)
+  { IL2L(il) -> int-literal-type(s, il, ty)
+  | BL2L(bl) -> bool-literal-type(s, bl, ty)
+  | SL2L(sl) -> string-literal-type(s, sl, ty)
+  | NL2L(nl) -> null-literal-type(s, nl, ty)
   }.
 
 // bool-literal-type : scope * BoolLiteral * Type

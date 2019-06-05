@@ -43,26 +43,26 @@ expression-ok(s, e, ty) :- e match
       lhs-ok(s, lhs, ty)
     , expression-ok(s, e, ty_e)
     , sub-type(ty_e, ty)
-  | FieldAccess2Expression(fieldAccess) ->
+  | FA2E(fieldAccess) ->
       field-access-ty(s, fieldAccess, ty)
-  | UnqualifiedInstance2Expression(unqualifiedInstance) ->
+  | UI2E(unqualifiedInstance) ->
       unqualified-instance-ok(s, unqualifiedInstance, ty)
   | QualifiedInstance(e, unqualifiedInstance) -> {ty_e, s_ty}
       expression-ok(s, e, ty_e)
     , instance-scope(ty_e, s_ty)
     , qualified-instance-ok(s, unqualifiedInstance, s_ty, ty)
-  | Literal2Expression(literal) ->
+  | L2E(literal) ->
       literal-type(s, literal, ty)
-  | ExpressionName2Expression(en) -> {x, p}
+  | EN2E(en) -> {x, p}
       expression-name-ok(s, en, p)
     , normalized-field-ty(p, [], ty)
   }.
 
 lhs-ok(s, lhs, ty) :- lhs match
-  { ExpressionName2LHS(expressionName) -> {x, p}
+  { EN2LHS(expressionName) -> {x, p}
       expression-name-ok(s, expressionName, p)
     , datum(p, (x, ty))
-  | FieldAccess2LHS(fieldAccess) ->
+  | FA2LHS(fieldAccess) ->
       field-access-ty(s, fieldAccess, ty)
   }.
 

@@ -41,8 +41,8 @@ unambiguous-class(reached, id, ty) :- {matched, visible, p, x}
 // unann-type-ok : scope * UnannType
 
 unann-type-ok(s, ut, ty) :- ut match
-  { UnannPrimitiveType2UnannType(upt) -> unann-primitive-type-ok(s, upt, ty)
-  | UnannReferenceType2UnannType(urt) -> unann-reference-type-ok(s, urt, ty)
+  { UPT2UT(upt) -> unann-primitive-type-ok(s, upt, ty)
+  | URT2UT(urt) -> unann-reference-type-ok(s, urt, ty)
   }.
 
 // unann-primitive-type-ok : scope * UnannPrimitiveType
@@ -55,7 +55,7 @@ unann-primitive-type-ok(s, upt, ty) :- upt match
 // unann-reference-type-ok : scope * UnannReferenceType
 
 unann-reference-type-ok(s, urt, ty) :- urt match
-  { UnannClassType2UnannReferenceType(uct) -> unann-class-type-ok(s, uct, ty)
+  { UCT2URT(uct) -> unann-class-type-ok(s, uct, ty)
   }.
 
 // unann-class-type-ok : scope * UnannClassType
@@ -86,7 +86,7 @@ primitive-type-ok(s, pt, ty) :- pt match
 // reference-type-ok : scope * ReferenceType
 
 reference-type-ok(s, rt, ty) :- rt match
-  { ClassType2ReferenceType(ct) -> class-type-ok(s, ct, ty)
+  { CT2RT(ct) -> class-type-ok(s, ct, ty)
   }.
 
 // numeric-type-ok : scope * NumericType

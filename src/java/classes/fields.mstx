@@ -22,7 +22,7 @@ field-decl-ok(s, vd, s_def, ty) :- vd match
   { VariableDeclInit(vdi, vi) ->
       field-decl-id-ok(vdi, s_def, ty)
     , variable-initializer-ok(s, vi, ty)
-  | VarDeclId2VarDecl(vdi) ->
+  | VDI2VD(vdi) ->
       field-decl-id-ok(vdi, s_def, ty)
   }.
 

@@ -12,7 +12,7 @@ import java.classes.methods
 // class-declaration-ok : scope * ClassDeclaration
 
 class-declaration-ok(s, cd) :- cd match
-  { NormalClassDeclaration2ClassDeclaration(ncd) -> normal-class-declaration-ok(s, ncd)
+  { NCD2CD(ncd) -> normal-class-declaration-ok(s, ncd)
   }.
 
 no-class-cycle(s, type) :- {parents, matches}
@@ -78,15 +78,15 @@ class-body-declarations-ok(s, cbds) :- cbds match
 // class-body-declaration-ok : scope * ClassBodyDeclaration
 
 class-body-declaration-ok(s, cbd) :- cbd match
-  { ClassMemberDeclaration2ClassBodyDeclaration(cmd) -> class-member-declaration-ok(s, cmd)
+  { CMD2CBD(cmd) -> class-member-declaration-ok(s, cmd)
   }.
 
 // class-member-declaration-ok : scope * ClassMemberDeclaration
 
 class-member-declaration-ok(s, cmd) :- cmd match
-  { FieldDeclaration2ClassMemberDeclaration(fd) -> field-declaration-ok(s, fd)
-  | MethodDeclaration2ClassMemberDeclaration(md) -> method-declaration-ok(s, md)
-  | ClassDeclaration2ClassMemberDeclaration(cd) -> class-declaration-ok(s, cd)
-  | InterfaceDeclaration2ClassMemberDeclaration(id) -> interface-declaration-ok(s, id)
+  { FD2CMD(fd) -> field-declaration-ok(s, fd)
+  | MD2CMD(md) -> method-declaration-ok(s, md)
+  | CD2CMD(cd) -> class-declaration-ok(s, cd)
+  | ID2CMD(id) -> interface-declaration-ok(s, id)
   | SemiColon() -> true
   }.

@@ -65,9 +65,9 @@ interface-member-declarations-ok(s, imds) :- imds match
 // interface-member-declaration-ok : scope * InterfaceMemberDeclaration
 
 interface-member-declaration-ok(s, imd) :- imd match
-  { InterfaceMethodDeclaration2InterfaceMemberDeclaration(imd) -> interface-method-declaration-ok(s, imd)
-  | ConstantDeclaration2InterfaceMemberDeclaration(cd)   -> false // class-declaration-ok(s, cd) // Only static classes here right?
-  | InterfaceDeclaration2InterfaceMemberDeclaration(id)   -> interface-declaration-ok(s, id)
+  { IMD2IMD(imd) -> interface-method-declaration-ok(s, imd)
+  | CD2IMD(cd)   -> false // class-declaration-ok(s, cd) // Only static classes here right?
+  | ID2IMD(id)   -> interface-declaration-ok(s, id)
   | SemiColon()  -> true
   }.
 
