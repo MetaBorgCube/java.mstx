@@ -14,7 +14,7 @@ PARSE_JAVA   = $(SUNSHINE) parse -l lib/java.spfx/lang.java -p . -i
 STATIX       = statix $(SPEC)
 JAVAC        = javac
 
-JAVA_TESTS   = $(shell find $(TESTS) -iname $(TESTRE))
+JAVA_TESTS   = $(shell find $(TESTS) -name $(TESTRE))
 
 TEST_TARGETS = $(JAVA_TESTS:%.java=%.result)
 
@@ -58,14 +58,14 @@ javafront: lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-langu
 
 test: $(TEST_TARGETS)
 test-results: 
-	find . -iname '*.result' -exec sh -c "cat {} | grep -i 'failure\|success'" \;
+	find . -name '*.result' -exec sh -c "cat {} | grep -i 'failure\|success'" \;
 
 ## Building
 
 ## Cleaning
 
 test-clean:
-	find -iname "*.class" -exec rm {} \;
-	find -iname "*.aterm" -exec rm {} \;
-	find -iname "*.result" -exec rm {} \;
-	find -iname "*.out" -exec rm {} \;
+	find . -name "*.class" -exec rm {} \;
+	find . -name "*.aterm" -exec rm {} \;
+	find . -name "*.result" -exec rm {} \;
+	find . -name "*.out" -exec rm {} \;
