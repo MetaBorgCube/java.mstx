@@ -1,7 +1,9 @@
 # paths
-JAVA_FRONT   =  lib/java.spfx/lang.java/
-SUNSHINE_URL =  http://artifacts.metaborg.org/service/local/repositories/releases/content/org/metaborg/org.metaborg.sunshine2/2.5.2/org.metaborg.sunshine2-2.5.2.jar
-SUNSHINE_JAR =  bin/org.metaborg.sunshine2-2.5.2.jar
+JAVA_FRONT_DIR     =  lib/java.spfx/lang.java/
+JAVA_FRONT_ARCHIVE = $(JAVA_FRONT)/target/lang.java-1.1.0-SNAPSHOT.spoofax-language
+SPX_VERSION  = 2.6.0-SNAPSHOT
+SUNSHINE_URL =  http://artifacts.metaborg.org/service/local/repositories/releases/content/org/metaborg/org.metaborg.sunshine2/$(SPX_VERSION)/org.metaborg.sunshine2-$(SPX_VERSION).jar
+SUNSHINE_JAR =  bin/org.metaborg.sunshine2-$(SPX_VERSION).jar
 SPEC         =  src/java.mstx
 TESTS        ?= tests/ # directory
 TESTRE       ?= '*.java' # iname
@@ -10,7 +12,7 @@ TESTRE       ?= '*.java' # iname
 MAVEN_OPTS   = "-Xms512m -Xmx1024m -Xss16m"
 MAVEN        = MAVEN_OPTS=$(MAVEN_OPTS) mvn
 SUNSHINE     = java -jar $(SUNSHINE_JAR)
-PARSE_JAVA   = $(SUNSHINE) parse -l lib/java.spfx/lang.java -p . -i 
+PARSE_JAVA   = $(SUNSHINE) transform -n "Explicate injections" -l lib/java.spfx/lang.java -p . -i
 STATIX       = statix $(SPEC)
 JAVAC        = javac
 
@@ -31,18 +33,18 @@ bin:
 	mkdir -p bin
 
 # get spoofax sunshine
-bin/org.metaborg.sunshine2-2.5.2.jar: bin
-	curl $(SUNSHINE_URL) -o $(SUNSHINE_JAR)
+$(SUNSHINE_JAR): bin
+	$(MAVEN) dependency:copy -DoutputDirectory=bin -Dartifact=org.metaborg:org.metaborg.sunshine2:$(SPX_VERSION) -Dmdep.useBaseVersion=true
 
 # ensure that spoofax sunshine is available
-sunshine: bin/org.metaborg.sunshine2-2.5.2.jar
+sunshine: $(SUNSHINE_JAR)
 
 # compile the java frontend
-lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-language: lib/java.spfx/lang.java/
-	cd $(JAVA_FRONT) && $(MAVEN) verify
+$(JAVA_FRONT_ARCHIVE): $(JAVA_FRONT_DIR)
+	cd $(JAVA_FRONT_DIR) && $(MAVEN) verify
 
 # ensure the java spoofax language frontend is compiled and available
-javafront: lib/java.spfx/lang.java/target/lang.java-1.1.0-SNAPSHOT.spoofax-language sunshine
+javafront: $(JAVA_FRONT_ARCHIVE) sunshine
 
 ## Testing
 

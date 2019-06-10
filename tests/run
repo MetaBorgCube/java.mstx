@@ -10,13 +10,13 @@ if [ ! -d "$JAVADIR" ]; then
     exit 1
 fi
 
-readonly SUNSHINE="$DIR/../bin/org.metaborg.sunshine2-2.5.2.jar"
-if [ ! -f "$SUNSHINE" ]; then
-    echo "FAILURE: Cannot find file $SUNSHINE"
+readonly SUNSHINE_JAR="$DIR/../bin/org.metaborg.sunshine2-2.6.0-SNAPSHOT.jar"
+if [ ! -f "$SUNSHINE_JAR" ]; then
+    echo "FAILURE: Cannot find file $SUNSHINE_JAR"
     exit 1
 fi
 
-readonly ATERM="java -jar $SUNSHINE parse -l $JAVADIR -p . -i"
+readonly SUNSHINE="java -jar $SUNSHINE_JAR"
 
 for infile in "$@"
 do
@@ -39,7 +39,7 @@ do
     # compile the file to an aterm
     jav=${infile%.java}.jav
     cp "$infile" $jav
-    ${ATERM} ${infile%.java}.jav > ${infile%.java}.aterm 2> /dev/null
+    ${SUNSHINE} transform -n "Explicate injections" -l "${JAVADIR}" -p . -i ${infile%.java}.jav > ${infile%.java}.aterm 2> /dev/null
 
     # run statix on the aterm
     statix check -I $DIR/../src/ java ${infile%.java}.aterm 2>&1 | tee ${infile%.java}.stx.out
@@ -48,8 +48,8 @@ do
     # compute test result by comparison
     if [ $java_ok -eq $stx_ok -a $java_ok -eq $positive ]
     then
-	echo -e "[\e[32mSUCCESS\e[0m] $infile"
+        echo -e "[\e[32mSUCCESS\e[0m] $infile"
     else
-	echo -e "[\e[31mFAILURE\e[0m] $infile"
+        echo -e "[\e[31mFAILURE\e[0m] $infile"
     fi
 done
