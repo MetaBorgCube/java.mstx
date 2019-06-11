@@ -1,10 +1,11 @@
 import stdlib.paths
 
-import java.types.references
-import java.statements.blocks
-import java.statements.locals
 import java.classes.fields
 import java.expressions.variables
+import java.names
+import java.statements.blocks
+import java.statements.locals
+import java.types.references
 
 // method-declaration-ok : scope * MethodDeclaration
 
@@ -74,9 +75,3 @@ return-type(s, ty) :- {reached, visible, p}
   , only(visible, p)
   , datum(p, ty).
 
-// method-name-ok : scope * MethodName * path
-
-method-name-ok(s, mn, p) :- mn match
-  { MethodName(id) ->
-      false
-  }.

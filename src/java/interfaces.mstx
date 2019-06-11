@@ -27,6 +27,7 @@ interface-declaration-ok(s_pkg, id) :- id match
     , maybe-extends-interfaces-ok(s_header, maybeExtendsInterfaces, s_intf)
 
     , self == INTF(s_intf, tps)
+    , s_intf   -[ `SELF ]-> s_intf
     , s_intf   -[ `LEX  ]-> s_header
     , s_header -[ `LEX  ]-> s_pkg
     , s_pkg    -[ `TYPE ]-> s_intf

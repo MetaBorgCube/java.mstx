@@ -1,21 +1,6 @@
-import java.types.references
+import java.names
 import java.expressions
-
-// expression-name-ok : scope * ExpressionName * path
-
-expression-name-ok(s, en, p) :- en match
-  { ExpressionName(id) -> {reached, matched, visible}
-      query s `LEX*`EXT*(`VAR|`FIELD) as reached
-    , filter reached ((id', _) where id' == id) matched
-    , min matched
-          lexico( `VAR < `LEX, `VAR < `EXT
-                , `EXT < `LEX
-                )
-          visible
-    , only(visible, p)
-  | ExpressionName(ambiguousName, id) ->
-      false
-  }.
+import java.types.references
 
 // var-decls-ok : scope * list(VarDecl) * Type
 

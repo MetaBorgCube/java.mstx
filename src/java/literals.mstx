@@ -10,8 +10,8 @@ literal-type(s, l, ty) :- l match
 // bool-literal-type : scope * BoolLiteral * Type
 
 bool-literal-type(s, bl, ty) :- bl match
-  { True()  -> ty == BOOL()
-  | False() -> ty == BOOL()
+  { True()  -> ty == BOOLEAN()
+  | False() -> ty == BOOLEAN()
   }.
 
 // int-literal-type : scope * IntLiteral * Type

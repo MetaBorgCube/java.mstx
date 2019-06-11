@@ -18,7 +18,7 @@ block-statements-ok(s, bs) :- bs match
     , s_blk -[ `LEX ]-> s
     , local-variable-declaration-statement-ok(s_blk, lvds)
     , block-statements-ok(s_blk, bs)
-  | CD(cd):bs -> {s_blk}
+  | CD2BS(cd):bs -> {s_blk}
       new s_blk
     , s_blk -[ `LEX ]-> s
     , class-declaration-ok(s_blk, cd)

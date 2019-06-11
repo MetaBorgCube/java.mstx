@@ -33,13 +33,13 @@ substn(tys, vars, ty, out) :- ty match
       , out == OBJECT(tydecl, params')
 
   // constants
-  | BYTE()	-> out == BYTE()
-  | SHORT()	-> out == SHORT()
-  | INT()	-> out == INT()
-  | LONG()	-> out == LONG()
-  | CHAR()	-> out == CHAR()
-  | FLOAT()	-> out == FLOAT()
-  | DOUBLE()	-> out == DOUBLE()
+  | BYTE()   -> out == BYTE()
+  | SHORT()  -> out == SHORT()
+  | INT()    -> out == INT()
+  | LONG()   -> out == LONG()
+  | CHAR()   -> out == CHAR()
+  | FLOAT()  -> out == FLOAT()
+  | DOUBLE() -> out == DOUBLE()
   }.
 
 substn-all(tys, vars, ins, outs) :- ins match 

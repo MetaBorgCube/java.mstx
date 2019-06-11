@@ -1,0 +1,11 @@
+import java.packages.types
+
+compilation-units-ok(s, cus) :- cus match
+  { []     -> true
+  | cu:cus -> compilation-unit-ok(s, cu), compilation-units-ok(s, cus)
+  }.
+
+compilation-unit-ok(s, cu) :- cu match
+  { CompilationUnit(pkgDecl, imports, typeDecls) ->
+      type-declarations-ok(s, typeDecls)
+  }.

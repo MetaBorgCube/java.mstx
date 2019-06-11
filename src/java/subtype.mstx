@@ -18,16 +18,17 @@ sub-types(txs, tys) :- (txs, tys) match
 
 sub-type(ty1, ty2) :- (ty1, ty2) match
   {
-    (BYTE(), BYTE())					-> true
-  | (SHORT(), SHORT())					-> true
-  | (INT(), INT())					-> true
-  | (LONG(), LONG())					-> true
-  | (CHAR(), CHAR())					-> true
-  | (FLOAT(), FLOAT())					-> true
-  | (DOUBLE(), DOUBLE())				-> true
+    (BYTE(), BYTE())                              -> true
+  | (SHORT(), SHORT())                            -> true
+  | (INT(), INT())                                -> true
+  | (LONG(), LONG())                              -> true
+  | (CHAR(), CHAR())                              -> true
+  | (FLOAT(), FLOAT())                            -> true
+  | (DOUBLE(), DOUBLE())                          -> true
+  | (BOOLEAN(), BOOLEAN())                        -> true
 
-  | (OBJECT(tydecl1, tps), OBJECT(tydecl2, tps'))	->
+  | (OBJECT(tydecl1, tps), OBJECT(tydecl2, tps')) ->
        child-of(tydecl1, tydecl2)
      , sub-types(tps, tps')
-  | (NULL(), OBJECT(_,_))				-> true 
+  | (NULL(), OBJECT(_,_))                         -> true 
   }.

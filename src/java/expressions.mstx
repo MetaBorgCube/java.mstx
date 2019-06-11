@@ -1,11 +1,12 @@
 import stdlib.paths
 
-import java.literals
 import java.classes.this
-import java.types.references
-import java.subtype
-import java.normalization
 import java.expressions.variables
+import java.literals
+import java.names
+import java.normalization
+import java.subtype
+import java.types.references
 
 // expressions-ok : scope * list(Expression) * list(Type)
 
@@ -20,7 +21,12 @@ expressions-ok(s, es, tys) :- es match
 // expression-ok : scope * Expression * Type
 
 expression-ok(s, e, ty) :- e match
-  { This() ->
+  { Eq(e1, e2) -> {ty1, ty2}
+      expression-ok(s, e1, ty1)
+    , expression-ok(s, e2, ty2)
+    , true // how should ty1 & ty2 agree?
+    , ty == BOOLEAN()
+  | This() ->
       this-type(s, ty)
   | QThis(typeName) -> {x, p, ty_this}
       type-name-ok(s, typeName, p)
@@ -71,24 +77,24 @@ lhs-ok(s, lhs, ty) :- lhs match
 field-access-ty(s, fa, ty) :- {p} 
   fa match
     { Field(e, id) -> {s_type, reached, targs, tydecl, gens}
-	expression-ok(s, e, OBJECT(tydecl, targs))
-	, type-scope(tydecl, s_type)
-	, query s_type `EXT*`FIELD as reached
-	, unambiguous-field(reached, id, p)
-	, normalized-field-ty(p, targs, ty)
+        expression-ok(s, e, OBJECT(tydecl, targs))
+      , type-scope(tydecl, s_type)
+      , query s_type `EXT*`FIELD as reached
+      , unambiguous-field(reached, id, p)
+      , normalized-field-ty(p, targs, ty)
     | SuperField(id) -> {super, tydecl, targs, reached, gens}
-    	super-type(s, OBJECT(tydecl, targs))
-	, type-scope(tydecl, super)
-    	, query super `EXT*`FIELD as reached
-    	, unambiguous-field(reached, id, p)
-	, normalized-field-ty(p, targs, ty)
+        super-type(s, OBJECT(tydecl, targs))
+      , type-scope(tydecl, super)
+      , query super `EXT*`FIELD as reached
+      , unambiguous-field(reached, id, p)
+      , normalized-field-ty(p, targs, ty)
     // | QSuperField(typeName, id) -> {ty_this, reached, s_cls, p, x}
-    // 	this-type(s, ty_this)
-    // 	, type-name-ok(s, typeName, p)
-    // 	, datum(p, (x, CLASS(s_cls)))
-    // 	, sub-type(ty_this, CLASS(s_cls))
-    // 	, query s_cls `EXT*`VAR as reached
-    // 	, unambiguous-field(reached, id, p)
+    //         this-type(s, ty_this)
+    //         , type-name-ok(s, typeName, p)
+    //         , datum(p, (x, CLASS(s_cls)))
+    //         , sub-type(ty_this, CLASS(s_cls))
+    //         , query s_cls `EXT*`VAR as reached
+    //         , unambiguous-field(reached, id, p)
     }.
 
 unambiguous-field(reached, id, p) :- {matched, visible}

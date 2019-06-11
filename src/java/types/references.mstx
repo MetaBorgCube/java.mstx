@@ -1,48 +1,23 @@
 import stdlib.paths
 
-// class-types-ok maps class-type-ok(*, list(*)) == list(*)
+import java.names
 
-class-types-ok(s, cts, tys) :- cts match
-  { ct:cts' -> {ty, tys'}
-       class-type-ok(s, ct, ty)
-     , class-types-ok(s, cts', tys')
-     , tys == ty:tys'
-  | []      -> tys == []
-  }.
 
-// class-type-ok : scope * ClassType -> TYPE
-
-class-type-ok(s, ct, ty) :- ct match
-  { ClassType(annotations, id, maybeTypeArguments) -> {reached, cls, tas}
-      query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
-      , unambiguous-class(reached, id, cls)
-      , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
-      , ty == OBJECT(cls, tas)
-  // | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {tydecl, targs, s_ty, reached, tas}
-  //       class-type-ok(s, classType, OBJECT(tydecl, targs))
-  //     , type-scope(tydecl, s_ty)
-  //     , query s_ty `EXT*`TYPE as reached // TODO direct type members only? Or also inherited?
-  //     , {inner_tydecl} 
-  //         unambiguous-class(reached, id, inner_tydecl)
-  //     	, maybe-type-arguments-ok(s, maybeTypeArguments, tas)
-  }.
-
-unambiguous-class(reached, id, ty) :- {matched, visible, p, x}
-  filter reached ((id', _) where id' == id) matched
-, min matched
-      lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL, `TYPE < `GENERICS
-            , `EXT < `LEX, `EXT < `IMPL, `EXT < `IMPL
-	    , `GENERICS < `LEX, `GENERICS < `EXT, `GENERICS < `IMPL
-            )
-      visible
-, only(visible, p)
-, datum(p, (x, ty)).
 
 // unann-type-ok : scope * UnannType
 
 unann-type-ok(s, ut, ty) :- ut match
   { UPT2UT(upt) -> unann-primitive-type-ok(s, upt, ty)
   | URT2UT(urt) -> unann-reference-type-ok(s, urt, ty)
+  }.
+
+
+
+// primitive-type-ok : scope * PrimitiveType
+
+primitive-type-ok(s, pt, ty) :- pt match
+  { NumericType(annotations, nt) -> numeric-type-ok(s, nt, ty)
+  | BooleanType(annotations)     -> ty == BOOLEAN()
   }.
 
 // unann-primitive-type-ok : scope * UnannPrimitiveType
@@ -52,10 +27,92 @@ unann-primitive-type-ok(s, upt, ty) :- upt match
   | BooleanType()   -> ty == BOOLEAN()
   }.
 
-// unann-reference-type-ok : scope * UnannReferenceType
+
+
+// reference-type-ok : scope * ReferenceType * Type
+
+reference-type-ok(s, rt, ty) :- rt match
+  { CT2RT(ct) -> class-type-ok(s, ct, ty)
+  | AT2RT(uat) -> array-type-ok(s, uat, ty)
+  }.
+
+// unann-reference-type-ok : scope * UnannReferenceType * Type
 
 unann-reference-type-ok(s, urt, ty) :- urt match
   { UCT2URT(uct) -> unann-class-type-ok(s, uct, ty)
+  | UAT2URT(uat) -> unann-array-type-ok(s, uat, ty)
+  }.
+
+
+
+// array-type-ok : scope * ArrayType * Type
+
+array-type-ok(s, at, ty) :- at match
+  { ArrayTypePrimitive(pt, annotatedDims) -> {ty'}
+      primitive-type-ok(s, pt, ty')
+    , annotated-dims-ok(annotatedDims, ty', ty)
+  | ArrayTypeClassType(ct, annotatedDims) -> {ty'}
+      class-type-ok(s, ct, ty')
+    , annotated-dims-ok(annotatedDims, ty', ty)
+  }.
+
+// unann-array-type-ok : scope * UnannArrayType * Type
+
+unann-array-type-ok(s, at, ty) :- at match
+  { ArrayTypePrimitive(upt, annotatedDims) -> {ty'}
+      unann-primitive-type-ok(s, upt, ty')
+    , annotated-dims-ok(annotatedDims, ty', ty)
+  | ArrayTypeClassType(uct, annotatedDims) -> {ty'}
+      unann-class-type-ok(s, uct, ty')
+    , annotated-dims-ok(annotatedDims, ty', ty)
+  }.
+
+annotated-dims-ok(dims, ty', ty) :- dims match
+  { []     -> ty == ty'
+  | _:dims -> annotated-dims-ok(dims, ARRAY(ty'), ty)
+  }.
+
+
+// numeric-type-ok : scope * NumericType
+
+numeric-type-ok(s, nt, ty) :- nt match
+  { Byte()   -> ty == BYTE()
+  | Short()  -> ty == SHORT()
+  | Int()    -> ty == INT()
+  | Long()   -> ty == LONG()
+  | Char()   -> ty == CHAR()
+  | Float()  -> ty == FLOAT()
+  | Double() -> ty == DOUBLE()
+  }.
+
+
+
+// class-types-ok maps class-type-ok(*, list(*)) == list(*)
+
+class-types-ok(s, cts, tys) :- cts match
+  { ct:cts' -> {ty, tys'}
+      class-type-ok(s, ct, ty)
+    , class-types-ok(s, cts', tys')
+    , tys == ty:tys'
+  | []      -> tys == []
+  }.
+
+// class-type-ok : scope * ClassType -> TYPE
+
+class-type-ok(s, ct, ty) :- ct match
+  { ClassType(annotations, id, maybeTypeArguments) ->
+    {reached, cls, tas}
+      query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
+    , unambiguous-class(reached, id, cls)
+    , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
+    , ty == OBJECT(cls, tas)
+  | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) ->
+    {tydecl, tas, tas', s', reached, cls}
+      class-type-ok(s, classType, OBJECT(tydecl, tas))
+    , type-scope(tydecl, s')
+    , inner-class-type(s', id, cls)
+    , maybe-type-arguments-ok(s, maybeTypeArguments, tas')
+    , ty == OBJECT(cls, tas)
   }.
 
 // unann-class-type-ok : scope * UnannClassType
@@ -76,59 +133,37 @@ unann-class-type-ok(s, urt, ty) :- urt match
     , ty == OBJECT(cls, tas)
   }.
 
-// primitive-type-ok : scope * PrimitiveType
-
-primitive-type-ok(s, pt, ty) :- pt match
-  { NumericType(annotations, nt) -> numeric-type-ok(s, nt, ty)
-  | BooleanType(annotations)     -> ty == BOOLEAN()
-  }.
-
-// reference-type-ok : scope * ReferenceType
-
-reference-type-ok(s, rt, ty) :- rt match
-  { CT2RT(ct) -> class-type-ok(s, ct, ty)
-  }.
-
-// numeric-type-ok : scope * NumericType
-
-numeric-type-ok(s, nt, ty) :- nt match
-  { Byte()   -> ty == BYTE()
-  | Short()  -> ty == SHORT()
-  | Int()    -> ty == INT()
-  | Long()   -> ty == LONG()
-  | Char()   -> ty == CHAR()
-  | Float()  -> ty == FLOAT()
-  | Double() -> ty == DOUBLE()
-  }.
+unambiguous-class(reached, id, ty) :- {matched, visible, p, x}
+  filter reached ((id', _) where id' == id) matched
+, min matched
+      lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL, `TYPE < `GENERICS
+            , `EXT < `LEX, `EXT < `IMPL, `EXT < `IMPL
+            , `GENERICS < `LEX, `GENERICS < `EXT, `GENERICS < `IMPL
+            )
+      visible
+, only(visible, p)
+, datum(p, (x, ty)).
 
 maybe-type-arguments-ok(s, maybeTypeArguments, tps) :- maybeTypeArguments match
   { None()                    -> tps == []
   | Some(TypeArguments(ftps)) -> type-arguments-ok(s, ftps, tps)
   }.
 
+// type-arguments-ok : scope * list(TypeArgument) * Types
+
 type-arguments-ok(s, typeArguments, tps) :- typeArguments match
   { ta:tas -> {tp, tps'}
       tps == tp:tps'
-    , reference-type-ok(s, ta, tp)
+    , type-argument-ok(s, ta, tp)
     , type-arguments-ok(s, tas, tps')
   | [] -> tps == []
   }.
 
-// type-name-ok : scope * TypeName * path
+// type-argument-ok : scope * TypeArgument * Type
 
-type-name-ok(s, tn, p) :- tn match
-  { TypeName(id) -> {reached, matched, visible}
-      query s `LEX*`EXT*`IMPL*`TYPE as reached
-    , filter reached ((id', _) where id' == id) matched
-    , min matched
-          lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
-                , `EXT < `IMPL, `EXT < `LEX
-                , `IMPL < `LEX
-                )
-          visible
-    , only(visible, p)
-  | TypeName(packageOrTypeName, id) ->
-      false
+type-argument-ok(s, ta, tp) :- ta match
+  { RT2TA(rt) -> 
+      reference-type-ok(s, rt, tp)
   }.
 
 is-class-or-interface-type(tp) :- tp match
@@ -161,3 +196,4 @@ type-formal-params(ty, ftps) :- ty match
 inner-class-type(s, id, ty) :- {reached}
   query s `EXT*`TYPE as reached
   , unambiguous-class(reached, id, ty).
+

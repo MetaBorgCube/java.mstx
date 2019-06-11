@@ -18,6 +18,27 @@ fi
 
 readonly SUNSHINE="java -jar $SUNSHINE_JAR"
 
+statix check -I $DIR/../src/ java 2>&1
+stx_runs=${PIPESTATUS[0]}
+if [ ! $stx_runs ]; then
+    echo "FAILURE: Cannot run statix"
+    exit 1
+fi
+
+if true || test -t 1; then
+   SUCCESS="[\e[32mSUCCESS\e[0m]"
+   FAILURE="[\e[31mFAILURE\e[0m]"
+   STUCK="[\e[34mSTUCK\e[0m]"
+else
+    SUCCESS="[SUCCESS]"
+    FAILURE="[FAILURE]"
+    STUCK="[STUCK]"
+fi
+
+function agree {
+    [ $1 -eq 0 -a $2 -eq 0 ] || [ $1 -ne 0 -a $2 -ne 0 ]
+}
+
 for infile in "$@"
 do
     if ! (echo $infile | grep -s "no.java") 
@@ -46,10 +67,11 @@ do
     stx_ok=${PIPESTATUS[0]}
 
     # compute test result by comparison
-    if [ $java_ok -eq $stx_ok -a $java_ok -eq $positive ]
-    then
-        echo -e "[\e[32mSUCCESS\e[0m] $infile"
+    if [ $stx_ok -eq 65 ]; then
+        echo -e "$STUCK $infile"
+    elif agree $stx_ok $java_ok && agree $java_ok $positive; then
+        echo -e "$SUCCESS $infile"
     else
-        echo -e "[\e[31mFAILURE\e[0m] $infile"
+        echo -e "$FAILURE $infile"
     fi
 done

@@ -1,7 +1,6 @@
-import java.types.declarations
+import java.packages.compilation_units
 
-main(tm) :- tm match
-  { CompilationUnit(pkgDecl, imports, typeDecls) -> {s}
-      new s
-    , type-declarations-ok(s, typeDecls)
-  }.
+main(cu) :- {s}
+  new s,
+  compilation-unit-ok(s, cu).
+

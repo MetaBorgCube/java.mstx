@@ -1,13 +1,14 @@
 import stdlib.sets
 
-import java.interfaces
-import java.generics
 import java.duplicates
+import java.generics
+import java.interfaces
 import java.types.references
 
-import java.classes.this
+import java.classes.constructors
 import java.classes.fields
 import java.classes.methods
+import java.classes.this
 
 // class-declaration-ok : scope * ClassDeclaration
 
@@ -17,8 +18,8 @@ class-declaration-ok(s, cd) :- cd match
 
 no-class-cycle(s, type) :- {parents, matches}
   query s `EXT+ as parents
-  , filter parents ((name, cls) where cls == type) matches
-  , empty(matches).
+, filter parents ((name, cls) where cls == type) matches
+, empty(matches).
 
 // normal-class-declaration-ok : scope * NormalClassDeclaration
 
@@ -41,6 +42,7 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
     , maybe-super-interfaces-ok(s_header, mSuperInterfaces, s_cls)
 
     , self == CLASS(s_cls, tps)
+    , s_cls    -[ `SELF ]-> s_cls
     , s_cls    -[ `LEX  ]-> s_header
     , s_header -[ `LEX  ]-> s_pkg
 
@@ -79,6 +81,7 @@ class-body-declarations-ok(s, cbds) :- cbds match
 
 class-body-declaration-ok(s, cbd) :- cbd match
   { CMD2CBD(cmd) -> class-member-declaration-ok(s, cmd)
+  | CD2CBD(cd) -> constructor-declaration-ok(s, cd)
   }.
 
 // class-member-declaration-ok : scope * ClassMemberDeclaration

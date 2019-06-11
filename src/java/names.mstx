@@ -1,0 +1,82 @@
+import stdlib.paths
+import stdlib.sets
+
+
+// package-name-ok : scope * PackageName * path
+
+package-name-ok(s, pn, p) :- pn match
+  { PackageName(id) ->
+      false
+  | PackageName(packageName, id) ->
+      false
+  }.
+
+
+// type-name-ok : scope * TypeName * path
+
+type-name-ok(s, tn, p) :- tn match
+  { TypeName(id) -> {types, idtypes, idtypes'}
+      query s `LEX*`EXT*`IMPL*`TYPE as types
+    , filter types ((id', _) where id' == id) idtypes
+    , min idtypes
+          lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
+                , `EXT < `IMPL, `EXT < `LEX
+                , `IMPL < `LEX
+                )
+          idtypes'
+    , only(idtypes', p)
+  | TypeName(ptn, id) -> {p', s', types, idtypes}
+      package-or-type-name-ok(s, ptn, p')
+    , tgt(p', s')
+    , query s' `TYPE as types
+    , filter types ((id', _) where id' == id) idtypes
+    , only(idtypes, p)
+  }.
+
+
+// package-or-type-name-ok : scope * PackageOrTypeName * path
+
+package-or-type-name-ok(s, ptn, p) :- ptn match
+  // `TYPE <+ `PKG
+  { PackageOrTypeName(id) ->
+      false
+  | PackageOrTypeName(ptn, id) ->
+      false
+  }.
+
+
+// expression-name-ok : scope * ExpressionName * path
+
+expression-name-ok(s, en, p) :- en match
+  { ExpressionName(id) -> {reached, matched, visible}
+      query s `LEX*`EXT*(`VAR|`FIELD) as reached
+    , filter reached ((id', _) where id' == id) matched
+    , min matched
+          lexico( `VAR < `LEX, `VAR < `EXT
+                , `EXT < `LEX
+                )
+          visible
+    , only(visible, p)
+  | ExpressionName(ambiguousName, id) ->
+      false
+  }.
+
+
+// ambiguous-name-ok : scope * AmbiguousName * path
+
+ambiguous-name-ok(s, an, p) :- an match
+  // `VAR <+ `TYPE <+ `PKG
+  { AmbiguousName(id) ->
+      false
+  | AmbiguousName(ambiguousName, id) ->
+      false
+  }.
+
+
+// method-name-ok : scope * MethodName * path
+
+method-name-ok(s, mn, p) :- mn match
+  { MethodName(id) ->
+      false
+  }.
+
