@@ -68,10 +68,10 @@ do
 
     # compute test result by comparison
     if [ $stx_ok -eq 65 ]; then
-        echo -e "$STUCK $infile"
+        printf "$STUCK $infile"
     elif agree $stx_ok $java_ok && agree $java_ok $positive; then
-        echo -e "$SUCCESS $infile"
+        printf "$SUCCESS $infile"
     else
-        echo -e "$FAILURE $infile"
+        printf "$FAILURE $infile"
     fi
 done
