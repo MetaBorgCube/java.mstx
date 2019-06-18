@@ -1,0 +1,16 @@
+package-declaration-ok(s, pd, s_cu) :- pd match
+  { None() ->
+      true
+  | Some(PackageDeclaration(annotations, ids)) ->
+      package-decl(s, ids, s_cu)
+  }.
+
+package-decl(s, ids, s_cu) :- ids match
+  { [] ->
+      s_cu -[ `LEX ]-> s
+  | id:ids -> {s_pkg}
+      new s_pkg -> (id, PKG(s_pkg))
+    , s -[ `PKG ]-> s_pkg
+    , s_pkg -[ `LEX ]-> s
+    , package-decl(s_pkg, ids, s_cu)
+  }.

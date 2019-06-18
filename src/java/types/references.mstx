@@ -94,62 +94,84 @@ class-types-ok(s, cts, tys) :- cts match
       class-type-ok(s, ct, ty)
     , class-types-ok(s, cts', tys')
     , tys == ty:tys'
-  | []      -> tys == []
+  | [] -> tys == []
   }.
 
 // class-type-ok : scope * ClassType -> TYPE
 
-class-type-ok(s, ct, ty) :- ct match
+class-type-ok(s, ct, ty) :- {p, id', cls, mtas, tas} ct match
   { ClassType(annotations, id, maybeTypeArguments) ->
-    {reached, cls, tas}
-      query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
-    , unambiguous-class(reached, id, cls)
-    , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
-    , ty == OBJECT(cls, tas)
-  | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) ->
-    {tydecl, tas, tas', s', reached, cls}
-      class-type-ok(s, classType, OBJECT(tydecl, tas))
-    , type-scope(tydecl, s')
-    , inner-class-type(s', id, cls)
-    , maybe-type-arguments-ok(s, maybeTypeArguments, tas')
-    , ty == OBJECT(cls, tas)
-  }.
+      lexical-type-name(s, id, p)
+    , mtas == maybeTypeArguments
+  | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s'}
+      class-type-or-pkg-ok(s, classType, s')
+    , direct-type-name(s', id, p)
+    , mtas == maybeTypeArguments
+  }
+, datum(p, (id', cls))
+, maybe-type-arguments-ok(s, mtas, tas)
+, ty == OBJECT(cls, tas).
+
+class-type-or-pkg-ok(s, ct, s') :- {n, mtas} ct match
+  { ClassType(annotations, id, maybeTypeArguments) ->
+      lexical-package-or-type-name(s, id, n)
+    , mtas == maybeTypeArguments
+  | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s'}
+      class-type-or-pkg-ok(s, classType, s')
+    , direct-package-or-type-name(s', id, n)
+    , mtas == maybeTypeArguments
+  }
+, n match
+    { PKG(p') ->
+        package-scope(p', s')
+      , mtas == None()
+    | TYPE(p') -> {id', cls, tas}
+        instance-scope(p', s')
+      , maybe-type-arguments-ok(s, mtas, tas)
+    }.
+
+
 
 // unann-class-type-ok : scope * UnannClassType
 
-unann-class-type-ok(s, urt, ty) :- urt match
+unann-class-type-ok(s, uct, ty) :- {p, id', cls, mtas, tas} uct match
   { ClassType(id, maybeTypeArguments) ->
-    {reached, cls, tas}
-      query s `LEX*(`EXT*`IMPL*|`GENERICS)`TYPE  as reached
-    , unambiguous-class(reached, id, cls)
-    , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
-    , ty == OBJECT(cls, tas)
-  | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) ->
-    {tydecl, tas, tas', s', reached, cls}
-      unann-class-type-ok(s, unannClassType, OBJECT(tydecl, tas))
-    , type-scope(tydecl, s')
-    , inner-class-type(s', id, cls)
-    , maybe-type-arguments-ok(s, maybeTypeArguments, tas')
-    , ty == OBJECT(cls, tas)
-  }.
+      lexical-type-name(s, id, p)
+    , mtas == maybeTypeArguments
+  | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {s'}
+      unann-class-type-or-pkg-ok(s, unannClassType, s')
+    , direct-type-name(s', id, p)
+    , mtas == maybeTypeArguments
+  }
+, datum(p, (id', cls))
+, maybe-type-arguments-ok(s, mtas, tas)
+, ty == OBJECT(cls, tas).
 
-unambiguous-class(reached, id, ty) :- {matched, visible, p, x}
-  filter reached ((id', _) where id' == id) matched
-, min matched
-      lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL, `TYPE < `GENERICS
-            , `EXT < `LEX, `EXT < `IMPL, `EXT < `IMPL
-            , `GENERICS < `LEX, `GENERICS < `EXT, `GENERICS < `IMPL
-            )
-      visible
-, only(visible, p)
-, datum(p, (x, ty)).
+unann-class-type-or-pkg-ok(s, ct, s') :- {n, mtas} ct match
+  { ClassType(id, maybeTypeArguments) ->
+      lexical-package-or-type-name(s, id, n)
+    , mtas == maybeTypeArguments
+  | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {s'}
+      unann-class-type-or-pkg-ok(s, unannClassType, s')
+    , direct-package-or-type-name(s', id, n)
+    , mtas == maybeTypeArguments
+  }
+, n match
+    { PKG(p') ->
+        package-scope(p', s')
+      , mtas == None()
+    | TYPE(p') -> {id', cls, tas}
+        instance-scope(p', s')
+      , maybe-type-arguments-ok(s, mtas, tas)
+    }.
+
+
+// type-arguments-ok : scope * list(TypeArgument) * Types
 
 maybe-type-arguments-ok(s, maybeTypeArguments, tps) :- maybeTypeArguments match
   { None()                    -> tps == []
   | Some(TypeArguments(ftps)) -> type-arguments-ok(s, ftps, tps)
   }.
-
-// type-arguments-ok : scope * list(TypeArgument) * Types
 
 type-arguments-ok(s, typeArguments, tps) :- typeArguments match
   { ta:tas -> {tp, tps'}
@@ -193,7 +215,6 @@ type-formal-params(ty, ftps) :- ty match
   | INTF(_,gens)   -> ftps == gens
   }.
 
-inner-class-type(s, id, ty) :- {reached}
-  query s `EXT*`TYPE as reached
-  , unambiguous-class(reached, id, ty).
-
+inner-class-type(s, id, ty) :- {p}
+  direct-type-name(s, id, p)
+, datum(p, (id, ty)).
