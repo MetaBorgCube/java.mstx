@@ -1,5 +1,15 @@
 import java.packages.compilation_units
 
+// Typing rules are written as predicates.
+// The following predicate can be read as:
+//
+//   new s      s ⊢ cu compilation-unit-ok
+// ----------------------------------------
+//                ⊢ cu main
+//
+// There is no distinction between 'inputs' and 'outputs',
+// But we like to write scopes before the turnstile in the
+// mathematical notation to denote their role as context.
 main(cu) :- {s}
   new s,
   compilation-unit-ok(s, cu).
