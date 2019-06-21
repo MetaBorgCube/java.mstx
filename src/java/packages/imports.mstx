@@ -1,0 +1,29 @@
+import stdlib.paths
+
+import java.names
+import java.types.references
+
+imports-ok(s, is, s_cu) :- is match
+  { []   -> true
+  | i:is -> import-ok(s, i, s_cu), imports-ok(s, is, s_cu)
+  }.
+
+import-ok(s, i, s_cu) :- i match
+  { SingleTypeImport(tn) -> {p, type, s_imp, s_type}
+      type-name-ok(s, tn, p)
+    , datum(p, type)
+    , new s_imp
+    , s_cu -[ `IMP ]-> s_imp
+    , new s_type -> type
+    , s_imp -[ `TYPE ]-> s_type
+  | TypeImportOnDemand(ptn) -> {n, s_imp}
+      package-or-type-name-ok(s, ptn, n)
+    , n match
+        { PKG(p') ->
+            package-scope(p', s_imp)
+        | TYPE(p') -> {id', ty}
+            datum(p', (id', ty))
+          , type-scope(ty, s_imp)
+        }
+    , s_cu -[ `IMP ]-> s_imp
+  }.

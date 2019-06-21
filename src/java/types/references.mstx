@@ -105,7 +105,7 @@ class-type-ok(s, ct, ty) :- {p, id', cls, mtas, tas} ct match
     , mtas == maybeTypeArguments
   | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s'}
       class-type-or-pkg-ok(s, classType, s')
-    , direct-type-name(s', id, p)
+    , member-type-name(s', id, p)
     , mtas == maybeTypeArguments
   }
 , datum(p, (id', cls))
@@ -118,7 +118,7 @@ class-type-or-pkg-ok(s, ct, s') :- {n, mtas} ct match
     , mtas == maybeTypeArguments
   | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s'}
       class-type-or-pkg-ok(s, classType, s')
-    , direct-package-or-type-name(s', id, n)
+    , member-package-or-type-name(s', id, n)
     , mtas == maybeTypeArguments
   }
 , n match
@@ -126,7 +126,8 @@ class-type-or-pkg-ok(s, ct, s') :- {n, mtas} ct match
         package-scope(p', s')
       , mtas == None()
     | TYPE(p') -> {id', cls, tas}
-        instance-scope(p', s')
+        datum(p', (id', cls))
+      , type-scope(cls, s')
       , maybe-type-arguments-ok(s, mtas, tas)
     }.
 
@@ -140,7 +141,7 @@ unann-class-type-ok(s, uct, ty) :- {p, id', cls, mtas, tas} uct match
     , mtas == maybeTypeArguments
   | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {s'}
       unann-class-type-or-pkg-ok(s, unannClassType, s')
-    , direct-type-name(s', id, p)
+    , member-type-name(s', id, p)
     , mtas == maybeTypeArguments
   }
 , datum(p, (id', cls))
@@ -153,7 +154,7 @@ unann-class-type-or-pkg-ok(s, ct, s') :- {n, mtas} ct match
     , mtas == maybeTypeArguments
   | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {s'}
       unann-class-type-or-pkg-ok(s, unannClassType, s')
-    , direct-package-or-type-name(s', id, n)
+    , member-package-or-type-name(s', id, n)
     , mtas == maybeTypeArguments
   }
 , n match
@@ -161,7 +162,8 @@ unann-class-type-or-pkg-ok(s, ct, s') :- {n, mtas} ct match
         package-scope(p', s')
       , mtas == None()
     | TYPE(p') -> {id', cls, tas}
-        instance-scope(p', s')
+        datum(p', (id', cls))
+      , type-scope(cls, s')
       , maybe-type-arguments-ok(s, mtas, tas)
     }.
 
@@ -215,6 +217,10 @@ type-formal-params(ty, ftps) :- ty match
   | INTF(_,gens)   -> ftps == gens
   }.
 
+lexical-class-type(s, id, ty) :- {p}
+  lexical-type-name(s, id, p)
+, datum(p, (id, ty)).
+
 inner-class-type(s, id, ty) :- {p}
-  direct-type-name(s, id, p)
+  member-type-name(s, id, p)
 , datum(p, (id, ty)).

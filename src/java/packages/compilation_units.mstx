@@ -1,3 +1,4 @@
+import java.packages.imports
 import java.packages.types
 import java.packages.package_declarations
 
@@ -8,7 +9,8 @@ compilation-units-ok(s, cus) :- cus match
 
 compilation-unit-ok(s, cu) :- cu match
   { CompilationUnit(pkgDecl, imports, typeDecls) -> {s_cu}
-      new s_cu,
-      package-declaration-ok(s, pkgDecl, s_cu),
-      type-declarations-ok(s_cu, typeDecls)
+      new s_cu
+    , package-declaration-ok(s, pkgDecl, s_cu)
+    , imports-ok(s, imports, s_cu)
+    , type-declarations-ok(s_cu, typeDecls)
   }.

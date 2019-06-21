@@ -1,4 +1,5 @@
-import A.B;
+package p;
+import p.A.B;
 class A {
     class B {}
 }

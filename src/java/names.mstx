@@ -12,7 +12,7 @@ package-name-ok(s, pn, p) :- pn match
   | PackageName(pn, id) -> {p', s_pkg}
       package-name-ok(s, pn, p')
     , package-scope(p', s_pkg)
-    , direct-package-name(s_pkg, id, p)
+    , member-package-name(s_pkg, id, p)
   }.
 
 lexical-package-name(s, id, p) :- {pkgs, idpkgs, idpkgs'}
@@ -23,7 +23,7 @@ lexical-package-name(s, id, p) :- {pkgs, idpkgs, idpkgs'}
       idpkgs'
 , only(idpkgs', p).
 
-direct-package-name(s, id, p) :- {pkgs, idpkgs, idpkgs}
+member-package-name(s, id, p) :- {pkgs, idpkgs, idpkgs}
   query s `PKG as pkgs
 , filter pkgs ((id', _) where id' == id) idpkgs
 , only(idpkgs, p).
@@ -44,7 +44,7 @@ type-name-ok(s, tn, p) :- tn match
             datum(p', (id', ty))
           , type-scope(ty, s')
         }
-    , direct-type-name(s', id, p)
+    , member-type-name(s', id, p)
   }.
 
 lexical-type-name(s, id, p) :- {types, idtypes, idtypes'}
@@ -58,7 +58,7 @@ lexical-type-name(s, id, p) :- {types, idtypes, idtypes'}
       idtypes'
 , only(idtypes', p).
 
-direct-type-name(s, id, p) :- {types, idtypes, idtypes'}
+member-type-name(s, id, p) :- {types, idtypes, idtypes'}
   query s `EXT*`IMPL*`TYPE as types
 , filter types ((id', _) where id' == id) idtypes
 , min idtypes
@@ -87,11 +87,11 @@ package-or-type-name-ok(s, ptn, n) :- ptn match
     , n match
         { PKG(p') -> {s_pkg}
             package-scope(p', s_pkg)
-          , direct-package-or-type-name(s_pkg, id, n)
+          , member-package-or-type-name(s_pkg, id, n)
         | TYPE(p') -> {id', ty, s_ty, p}
             datum(p', (id', ty))
           , type-scope(ty, s_ty)
-          , direct-type-name(s_ty, id, p)
+          , member-type-name(s_ty, id, p)
           , n == TYPE(p)
         }
   }.
@@ -114,7 +114,7 @@ lexical-package-or-type-name(s, id, n) :- {names, id-names, id-names', p, l}
     | `PKG  -> n == PKG(p)
     }.
 
-direct-package-or-type-name(s, id, n) :- {names, id-names, id-names', p', l}
+member-package-or-type-name(s, id, n) :- {names, id-names, id-names', p', l}
   query s `TYPE | `PKG as names
 , filter names ((id', _) where id' == id) id-names
 , min id-names
@@ -141,7 +141,7 @@ expression-name-ok(s, en, p) :- en match
         { EXPR(p') -> {id', ty, s_ty}
             datum(p', (id', ty))
           , instance-scope(ty, s_ty)
-          , direct-expression-name(s_ty, id, p)
+          , member-expression-name(s_ty, id, p)
         }
   }.
 
@@ -156,7 +156,7 @@ lexical-expression-name(s, id, p) :- {names, id-names, id-names'}
       id-names'
 , only(id-names', p).
 
-direct-expression-name(s, id, p) :- {names, id-names, id-names'}
+member-expression-name(s, id, p) :- {names, id-names, id-names'}
   query s `EXT*(`VAR|`FIELD) as names
 , filter names ((id', _) where id' == id) id-names
 , min id-names
@@ -211,7 +211,7 @@ ambiguous-name-ok(s, an, n) :- an match
         { EXPR(p') -> {id', ty, s_ty, p}
             datum(p', (id', ty))
           , instance-scope(ty, s_ty)
-          , direct-expression-name(s_ty, id, p)
+          , member-expression-name(s_ty, id, p)
           , n == EXPR(p)
         }
   }.

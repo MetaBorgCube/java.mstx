@@ -121,7 +121,7 @@ unqualified-instance-ok(s, ui, ty) :- ui match
 
 unqualified-instance-type-ok(s, id, qualifiedIds, ty) :- qualifiedIds match
   { [] -> {reached}
-      inner-class-type(s, id, ty)
+      lexical-class-type(s, id, ty)
   | QualifiedId(_, id'):qualifiedIds -> {reached, tydecl, tas, s_ty'}
       unqualified-instance-type-ok(s, id, qualifiedIds, OBJECT(tydecl, tas))
     , type-scope(tydecl, s_ty')
