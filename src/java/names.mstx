@@ -4,6 +4,7 @@ import stdlib.sets
 import java.types.references
 
 
+
 // package-name-ok : scope * PackageName * path
 
 package-name-ok(s, pn, p) :- pn match
@@ -16,15 +17,19 @@ package-name-ok(s, pn, p) :- pn match
   }.
 
 lexical-package-name(s, id, p) :- {pkgs, idpkgs, idpkgs'}
-  query s `LEX*`PKG as pkgs
+  query s
+        `LEX* `CU `LEX* `PKG // LEX-PKG-RE
+        as pkgs
 , filter pkgs ((id', _) where id' == id) idpkgs
-, min idpkgs
-      lexico( `PKG < `LEX )
-      idpkgs'
+, min idpkgs lexico(
+        `PKG < `LEX // PKG-ORD
+      ) idpkgs'
 , only(idpkgs', p).
 
 member-package-name(s, id, p) :- {pkgs, idpkgs, idpkgs}
-  query s `PKG as pkgs
+  query s
+        `PKG // MEM-PKG-RE
+        as pkgs
 , filter pkgs ((id', _) where id' == id) idpkgs
 , only(idpkgs, p).
 
@@ -48,24 +53,23 @@ type-name-ok(s, tn, p) :- tn match
   }.
 
 lexical-type-name(s, id, p) :- {types, idtypes, idtypes'}
-  query s `LEX*`EXT*`IMPL*`TYPE as types
+  query s
+        `LEX* `CU? `IMP? `EXT* `IMPL* `TYPE // LEX-TYPE-RE
+        as types
 , filter types ((id', _) where id' == id) idtypes
-, min idtypes
-      lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
-            , `EXT < `IMPL, `EXT < `LEX
-            , `IMPL < `LEX
-            )
-      idtypes'
+, min idtypes lexico(
+        `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX // TYPE-ORD
+      ) idtypes'
 , only(idtypes', p).
 
 member-type-name(s, id, p) :- {types, idtypes, idtypes'}
-  query s `EXT*`IMPL*`TYPE as types
+  query s
+        `EXT* `IMPL* `TYPE // MEM-TYPE-RE
+        as types
 , filter types ((id', _) where id' == id) idtypes
-, min idtypes
-      lexico( `TYPE < `EXT, `TYPE < `IMPL
-            , `EXT < `IMPL
-            )
-      idtypes'
+, min idtypes lexico(
+        `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX // TYPE-ORD
+      ) idtypes'
 , only(idtypes, p).
 
 
@@ -97,16 +101,14 @@ package-or-type-name-ok(s, ptn, n) :- ptn match
   }.
 
 lexical-package-or-type-name(s, id, n) :- {names, id-names, id-names', p, l}
-  query s `LEX*`EXT*`IMPL*`TYPE | `LEX*`PKG as names
+  query s
+        `LEX* `CU `LEX* `PKG | `LEX* `CU? `IMP? `EXT* `IMPL* `TYPE // LEX-PKG-OR-TYPE-RE
+        as names
 , filter names ((id', _) where id' == id) id-names
 , true // .*`TYPE < .*`PKG
-, min id-names
-      lexico( `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
-            , `PKG < `LEX
-            , `EXT < `IMPL, `EXT < `LEX
-            , `IMPL < `LEX
-            )
-      id-names'
+, min id-names lexico(
+        `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX, `TYPE < `PKG // PKG-OR-TYPE-ORD
+      ) id-names'
 , only(id-names', p)
 , tgt-lbl(p, l)
 , l match
@@ -115,12 +117,13 @@ lexical-package-or-type-name(s, id, n) :- {names, id-names, id-names', p, l}
     }.
 
 member-package-or-type-name(s, id, n) :- {names, id-names, id-names', p', l}
-  query s `TYPE | `PKG as names
+  query s
+        `PKG | `EXT* `IMPL* `TYPE // MEM-PKG-OR-TYPE-RE
+        as names
 , filter names ((id', _) where id' == id) id-names
-, min id-names
-      lexico( `TYPE < `PKG
-            )
-      id-names'
+, min id-names lexico(
+        `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX, `TYPE < `PKG // PKG-OR-TYPE-ORD
+      ) id-names'
 , only(id-names', p')
 , tgt-lbl(p', l)
 , l match
@@ -146,24 +149,23 @@ expression-name-ok(s, en, p) :- en match
   }.
 
 lexical-expression-name(s, id, p) :- {names, id-names, id-names'}
-  query s `LEX*`EXT*(`VAR|`FIELD) as names
+  query s
+        `LEX* `EXT* (`VAR|`FIELD) // LEX-EXPR-RE
+        as names
 , filter names ((id', _) where id' == id) id-names
-, min id-names
-      lexico( `VAR < `LEX, `VAR < `EXT
-            , `FIELD < `LEX, `FIELD < `EXT
-            , `EXT < `LEX
-            )
-      id-names'
+, min id-names lexico(
+        `VAR < `LEX, `FIELD < `LEX, `VAR < `EXT, `FIELD < `EXT, `EXT < `LEX // EXPR-ORD
+      ) id-names'
 , only(id-names', p).
 
 member-expression-name(s, id, p) :- {names, id-names, id-names'}
-  query s `EXT*(`VAR|`FIELD) as names
+  query s
+        `EXT* (`VAR|`FIELD) // MEM-EXPR-RE
+        as names
 , filter names ((id', _) where id' == id) id-names
-, min id-names
-      lexico( `VAR < `EXT
-            , `FIELD < `EXT
-            )
-      id-names'
+, min id-names lexico(
+        `VAR < `LEX, `FIELD < `LEX, `VAR < `EXT, `FIELD < `EXT, `EXT < `LEX // EXPR-ORD
+      ) id-names'
 , only(id-names', p).
 
 
@@ -177,18 +179,13 @@ ambiguous-name-ok(s, an, n) :- an match
     // local Type -> TypeName
     // (static) import Type -> TypeName
     // -> PackageName
-      query s `LEX*`EXT*(`VAR|`FIELD) | `LEX*`EXT*`IMPL*`TYPE | `LEX*`PKG as names
+      query s
+            `LEX* `EXT* (`VAR|`FIELD) | `LEX* `CU `LEX* `PKG | `LEX* `CU? `IMP? `EXT* `IMPL* `TYPE // AMB-RE
+            as names
     , filter names ((id', _) where id' == id) id-names
-    , true // .*(`VAR|`FIELD) < .*`TYPE < .*`PKG
-    , min id-names
-          lexico( `VAR < `LEX, `VAR < `EXT
-                , `FIELD < `LEX, `FIELD < `EXT
-                , `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMPL
-                , `PKG < `LEX
-                , `EXT < `IMPL, `EXT < `LEX
-                , `IMPL < `LEX
-                )
-          id-names'
+    , min id-names lexico(
+            `VAR < `LEX, `FIELD < `LEX, `VAR < `EXT, `FIELD < `EXT, `EXT < `LEX, `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX, `TYPE < `PKG, `VAR < `TYPE, `FIELD < `TYPE // AMB-ORD
+          ) id-names'
     , only(id-names', p)
     , tgt-lbl(p, l)
     , l match

@@ -8,9 +8,10 @@ compilation-units-ok(s, cus) :- cus match
   }.
 
 compilation-unit-ok(s, cu) :- cu match
-  { CompilationUnit(pkgDecl, imports, typeDecls) -> {s_cu}
-      new s_cu
-    , package-declaration-ok(s, pkgDecl, s_cu)
+  { CompilationUnit(pkgDecl, imports, typeDecls) -> {s_cu, s_pkg}
+      new s_cu, s_cu -[ `LEX ]-> s
+    , new s_pkg, s_pkg -[ `CU ]-> s_cu
+    , package-declaration-ok(s, pkgDecl, s_pkg)
     , imports-ok(s, imports, s_cu)
-    , type-declarations-ok(s_cu, typeDecls)
+    , type-declarations-ok(s_pkg, typeDecls)
   }.

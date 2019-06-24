@@ -9,13 +9,11 @@ imports-ok(s, is, s_cu) :- is match
   }.
 
 import-ok(s, i, s_cu) :- i match
-  { SingleTypeImport(tn) -> {p, type, s_imp, s_type}
+  { SingleTypeImport(tn) -> {p, type, s_type}
       type-name-ok(s, tn, p)
     , datum(p, type)
-    , new s_imp
-    , s_cu -[ `IMP ]-> s_imp
     , new s_type -> type
-    , s_imp -[ `TYPE ]-> s_type
+    , s_cu -[ `TYPE ]-> s_type
   | TypeImportOnDemand(ptn) -> {n, s_imp}
       package-or-type-name-ok(s, ptn, n)
     , n match
