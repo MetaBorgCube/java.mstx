@@ -28,12 +28,10 @@ fi
 
 readonly SUNSHINE="java -jar $SUNSHINE_JAR"
 
-statix check -I $DIR/../src/ java 2>&1
-stx_runs=${PIPESTATUS[0]}
-if [ ! $stx_runs ]; then
-    printf "[$PANIC] Cannot run statix\n"
+statix check -I $DIR/../src/ java 2>&1 || {
+    printf "[$PANIC] Cannot run statix or load spec\n"
     exit 1
-fi
+}
 
 function expect {
     if [ $1 -eq 0 ]; then printf "pass"; else printf "fail"; fi
@@ -101,11 +99,15 @@ do
     echo "Statix $(expect $stx_ok)"
 
     # compute test result by comparison
-    if [ $stx_ok -eq 65 ]; then
+    if [ $stx_ok -eq 0 -o $stx_ok -eq 64 ]; then
+        if agree $stx_ok $positive; then
+            printf "[$SUCCESS] $testfile\n"
+        else
+            printf "[$FAILURE] $testfile\n"
+        fi
+    elif [ $stx_ok -eq 65 ]; then
         printf "[$PANIC:STUCK] $testfile\n"
-    elif agree $stx_ok $positive; then
-        printf "[$SUCCESS] $testfile\n"
     else
-        printf "[$FAILURE] $testfile\n"
+        printf "[$PANIC] Statix failed on $testfile\n"
     fi
 done
