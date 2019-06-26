@@ -2,17 +2,27 @@
 
 set -eu
 
+if true || test -t 1; then
+   SUCCESS="\e[32mSUCCESS\e[0m"
+   FAILURE="\e[31mFAILURE\e[0m"
+   PANIC="\e[34mPANIC\e[0m"
+else
+   SUCCESS="SUCCESS"
+   FAILURE="FAILURE"
+   PANIC="PANIC"
+fi
+
 readonly DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 readonly JAVADIR="$DIR/../lib/java.spfx/lang.java"
 if [ ! -d "$JAVADIR" ]; then
-    echo "FAILURE: Cannot find directory $JAVADIR"
+    printf "[$PANIC] Cannot find directory $JAVADIR\n"
     exit 1
 fi
 
 readonly SUNSHINE_JAR="$DIR/../bin/org.metaborg.sunshine2-2.6.0-SNAPSHOT.jar"
 if [ ! -f "$SUNSHINE_JAR" ]; then
-    echo "FAILURE: Cannot find file $SUNSHINE_JAR"
+    printf "[$PANIC] Cannot find file $SUNSHINE_JAR\n"
     exit 1
 fi
 
@@ -21,20 +31,8 @@ readonly SUNSHINE="java -jar $SUNSHINE_JAR"
 statix check -I $DIR/../src/ java 2>&1
 stx_runs=${PIPESTATUS[0]}
 if [ ! $stx_runs ]; then
-    echo "FAILURE: Cannot run statix"
+    printf "[$PANIC] Cannot run statix\n"
     exit 1
-fi
-
-if true || test -t 1; then
-   SUCCESS="[\e[32mSUCCESS\e[0m]"
-   FAILURE="[\e[31mFAILURE\e[0m]"
-   STUCK="[\e[34mSTUCK\e[0m]"
-   DISAGREE="[\e[34mDISAGREE\e[0m]"
-else
-   SUCCESS="[SUCCESS]"
-   FAILURE="[FAILURE]"
-   STUCK="[STUCK]"
-   DISAGREE="[DISAGREE]"
 fi
 
 function expect {
@@ -65,7 +63,7 @@ do
     rm -rf "$classes"
     echo "JavaC $(expect $java_ok)"
     if ! agree $java_ok $positive; then
-        printf "$DISAGREE $testfile\n"
+        printf "[$PANIC:DISAGREE] $testfile\n"
         continue
     fi
 
@@ -82,7 +80,12 @@ do
            echo "Parse $infile to $aterm"
            jav="${infile%.java}.jav"
            cp "$infile" "$jav"
-           ${SUNSHINE} transform -n "Explicate injections" -l "${JAVADIR}" -p . -i "$jav" >/dev/null 2>&1
+           ${SUNSHINE} transform -n "Explicate injections" -l "${JAVADIR}" -p . -i "$jav" 2>&1 >/dev/null | tee "${infile%.java}.parse.out"
+           parse_ok=${PIPESTATUS[0]}
+           if [ $parse_ok -ne 0 ]; then
+               printf "[$PANIC:PARSE] Parsing failed for $infile\n"
+               continue 2
+           fi
            rm -f "$jav"
        fi
        printf "$sep" >> "$testaterm"
@@ -99,10 +102,10 @@ do
 
     # compute test result by comparison
     if [ $stx_ok -eq 65 ]; then
-        printf "$STUCK $testfile\n"
+        printf "[$PANIC:STUCK] $testfile\n"
     elif agree $stx_ok $positive; then
-        printf "$SUCCESS $testfile\n"
+        printf "[$SUCCESS] $testfile\n"
     else
-        printf "$FAILURE $testfile\n"
+        printf "[$FAILURE] $testfile\n"
     fi
 done
