@@ -100,31 +100,36 @@ package-or-type-name-ok(s, ptn, n) :- ptn match
         }
   }.
 
-lexical-package-or-type-name(s, id, n) :- {names, id-names, id-names', p, l}
+lexical-package-or-type-name(s, id, n) :- {names, id-names, id-names', id-names'', p, l}
   query s
         `LEX* `CU `LEX* `PKG | `LEX* `CU? `IMP? `EXT* `IMPL* `TYPE // LEX-PKG-OR-TYPE-RE
         as names
 , filter names ((id', _) where id' == id) id-names
-, true // .*`TYPE < .*`PKG
-, min id-names lexico(
-        `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX, `TYPE < `PKG // PKG-OR-TYPE-ORD
+, min id-names reverse-lexico(
+        `TYPE < `PKG
       ) id-names'
-, only(id-names', p)
+, min id-names' lexico(
+        `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX // PKG-OR-TYPE-ORD
+      ) id-names''
+, only(id-names'', p)
 , tgt-lbl(p, l)
 , l match
     { `TYPE -> n == TYPE(p)
     | `PKG  -> n == PKG(p)
     }.
 
-member-package-or-type-name(s, id, n) :- {names, id-names, id-names', p', l}
+member-package-or-type-name(s, id, n) :- {names, id-names, id-names', id-names'', p', l}
   query s
         `PKG | `EXT* `IMPL* `TYPE // MEM-PKG-OR-TYPE-RE
         as names
 , filter names ((id', _) where id' == id) id-names
-, min id-names lexico(
-        `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX, `TYPE < `PKG // PKG-OR-TYPE-ORD
+, min id-names reverse-lexico(
+        `TYPE < `PKG
       ) id-names'
-, only(id-names', p')
+, min id-names' lexico(
+        `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX // PKG-OR-TYPE-ORD
+      ) id-names''
+, only(id-names'', p')
 , tgt-lbl(p', l)
 , l match
     { `TYPE -> n == TYPE(p')
@@ -173,20 +178,23 @@ member-expression-name(s, id, p) :- {names, id-names, id-names'}
 // ambiguous-name-ok : scope * AmbiguousName * path
 
 ambiguous-name-ok(s, an, n) :- an match
-  { AmbiguousName(id) -> {names, id-names, id-names', p, l}
+  { AmbiguousName(id) -> {names, id-names, id-names', id-names'', p, l}
     // local Var -> ExpressionName
     // static import Var -> ExpressionName
     // local Type -> TypeName
     // (static) import Type -> TypeName
     // -> PackageName
       query s
-            `LEX* `EXT* (`VAR|`FIELD) | `LEX* `CU `LEX* `PKG | `LEX* `CU? `IMP? `EXT* `IMPL* `TYPE // AMB-RE
+            `LEX* `CU `LEX* `PKG | `LEX* `CU? `IMP? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // AMB-RE
             as names
     , filter names ((id', _) where id' == id) id-names
-    , min id-names lexico(
-            `VAR < `LEX, `FIELD < `LEX, `VAR < `EXT, `FIELD < `EXT, `EXT < `LEX, `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX, `TYPE < `PKG, `VAR < `TYPE, `FIELD < `TYPE // AMB-ORD
+    , min id-names reverse-lexico(
+            `VAR < `TYPE, `VAR < `PKG, `FIELD < `TYPE, `FIELD < `PKG, `TYPE < `PKG
           ) id-names'
-    , only(id-names', p)
+    , min id-names' lexico(
+            `VAR < `LEX, `FIELD < `LEX, `VAR < `EXT, `FIELD < `EXT, `EXT < `LEX, `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX // AMB-ORD
+          ) id-names''
+    , only(id-names'', p)
     , tgt-lbl(p, l)
     , l match
         { `VAR   -> n == EXPR(p)
