@@ -8,8 +8,10 @@ package-declaration-ok(s, pd, s_pkg) :- {ids} pd match
 , true. // TODO import other scopes of package `ids` using `IMP label
 
 package-decl(s, ids, s_pkg) :- ids match
-  { [] ->
-      s_pkg -[ `LEX ]-> s
+  { id:[] ->
+      s_pkg -> (id, PKG(s_pkg))
+    , s -[ `PKG ]-> s_pkg
+    , s_pkg -[ `LEX ]-> s
   | id:ids -> {s_pkg'}
       new s_pkg' -> (id, PKG(s_pkg'))
     , s -[ `PKG ]-> s_pkg'

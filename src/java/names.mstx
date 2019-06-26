@@ -18,7 +18,7 @@ package-name-ok(s, pn, p) :- pn match
 
 lexical-package-name(s, id, p) :- {pkgs, idpkgs, idpkgs'}
   query s
-        `LEX* `CU `LEX* `PKG // LEX-PKG-RE
+        (`LEX|`CU)* `PKG // LEX-PKG-RE
         as pkgs
 , filter pkgs ((id', _) where id' == id) idpkgs
 , min idpkgs lexico(
@@ -54,7 +54,7 @@ type-name-ok(s, tn, p) :- tn match
 
 lexical-type-name(s, id, p) :- {types, idtypes, idtypes'}
   query s
-        `LEX* `CU? `IMP? `EXT* `IMPL* `TYPE // LEX-TYPE-RE
+        (`LEX|`CU)* `IMP? `EXT* `IMPL* `TYPE // LEX-TYPE-RE
         as types
 , filter types ((id', _) where id' == id) idtypes
 , min idtypes lexico(
@@ -81,14 +81,14 @@ package-or-type-name-ok(s, ptn, n) :- ptn match
     // Type -> TypeName
     // -> PackageName
     lexical-package-or-type-name(s, id, n)
-  | PackageOrTypeName(ptn, id) -> {n}
+  | PackageOrTypeName(ptn, id) -> {n'}
     // Type =>
     //   -> TypeName
     // Pkg =>
     //   Type -> TypeName
     //   -> PackageName
-      package-or-type-name-ok(s, ptn, n)
-    , n match
+      package-or-type-name-ok(s, ptn, n')
+    , n' match
         { PKG(p') -> {s_pkg}
             package-scope(p', s_pkg)
           , member-package-or-type-name(s_pkg, id, n)
@@ -102,7 +102,7 @@ package-or-type-name-ok(s, ptn, n) :- ptn match
 
 lexical-package-or-type-name(s, id, n) :- {names, id-names, id-names', id-names'', p, l}
   query s
-        `LEX* `CU `LEX* `PKG | `LEX* `CU? `IMP? `EXT* `IMPL* `TYPE // LEX-PKG-OR-TYPE-RE
+        (`LEX|`CU)* `PKG | (`LEX|`CU)* `IMP? `EXT* `IMPL* `TYPE // LEX-PKG-OR-TYPE-RE
         as names
 , filter names ((id', _) where id' == id) id-names
 , min id-names reverse-lexico(
@@ -185,7 +185,7 @@ ambiguous-name-ok(s, an, n) :- an match
     // (static) import Type -> TypeName
     // -> PackageName
       query s
-            `LEX* `CU `LEX* `PKG | `LEX* `CU? `IMP? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // AMB-RE
+            (`LEX|`CU)* `PKG | (`LEX|`CU)* `IMP? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // AMB-RE
             as names
     , filter names ((id', _) where id' == id) id-names
     , min id-names reverse-lexico(
@@ -202,7 +202,7 @@ ambiguous-name-ok(s, an, n) :- an match
         | `TYPE  -> n == TYPE(p)
         | `PKG   -> n == PKG(p)
         }
-  | AmbiguousName(an, id) -> {n}
+  | AmbiguousName(an, id) -> {n'}
     // Pkg =>
     //   local Type -> TypeName
     //   -> PackageName
@@ -211,8 +211,8 @@ ambiguous-name-ok(s, an, n) :- an match
     //   Type -> TypeName
     // Var =>
     //   -> ExpressionName
-      ambiguous-name-ok(s, an, n)
-    , n match
+      ambiguous-name-ok(s, an, n')
+    , n' match
         { EXPR(p') -> {id', ty, s_ty, p}
             datum(p', (id', ty))
           , instance-scope(ty, s_ty)
@@ -232,5 +232,5 @@ method-name-ok(s, mn, p) :- mn match
 
 
 
-package-scope(p, s_pkg) :-
-  tgt(p, s_pkg).
+package-scope(p, s_pkg) :- {id}
+  datum(p, (id, PKG(s_pkg))).
