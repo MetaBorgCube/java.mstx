@@ -56,11 +56,11 @@ javafront: $(JAVA_FRONT_ARCHIVE) sunshine
 	rm -f $(<:%.java=%.jav)
 
 %.result: %.java src/
-	@./tests/run $< | tee $@ | grep "FAILURE\|SUCCESS\|STUCK"
+	@./tests/run $< | tee $@ | grep "FAILURE\|SUCCESS\|STUCK\|DISAGREE"
 
 test: $(TEST_TARGETS)
 test-results: 
-	find . -name '*.result' -exec sh -c "cat {} | grep 'FAILURE\|SUCCESS\|STUCK'" \;
+	find . -name '*.result' -exec sh -c "cat {} | grep 'FAILURE\|SUCCESS\|STUCK\|DISAGREE'" \;
 
 ## Building
 
