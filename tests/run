@@ -30,48 +30,78 @@ if true || test -t 1; then
    FAILURE="[\e[31mFAILURE\e[0m]"
    STUCK="[\e[34mSTUCK\e[0m]"
 else
-    SUCCESS="[SUCCESS]"
-    FAILURE="[FAILURE]"
-    STUCK="[STUCK]"
+   SUCCESS="[SUCCESS]"
+   FAILURE="[FAILURE]"
+   STUCK="[STUCK]"
 fi
 
 function agree {
     [ $1 -eq 0 -a $2 -eq 0 ] || [ $1 -ne 0 -a $2 -ne 0 ]
 }
 
-for infile in "$@"
+for testfile in "$@"
 do
-    if ! (echo $infile | grep -s "no.java") 
+    testname="${testfile%.java}"
+    infiles="$(find "$testfile" -type f -name '*.java')"
+
+    if ! (echo "$testname" | grep -s ".no")
     then
         positive=0
-	echo "Expect pass"
+        echo "Expect pass"
     else
         positive=1
-	echo "Expect fail"
+        echo "Expect fail"
     fi
 
-    # make sure to remove all class files to avoid incidental capture
-    rm -f $(dirname "$infile")/*.class
-
-    # run java compiler
-    javac $infile 2>&1 | tee ${infile%.java}.javac.out 
+    ## Compile Java classes
+    classes=$(mktemp -d -p . "${testname}.XXXXX.classes")
+    javac -d "$classes" $infiles 2>&1 | tee "${testname}.javac.out"
     java_ok=${PIPESTATUS[0]}
+    rm -rf "$classes"
+    if [ $java_ok -eq 0 ]; then
+        echo "JavaC pass"
+    else
+        echo "JavaC fail"
+    fi
 
-    # compile the file to an aterm
-    jav=${infile%.java}.jav
-    cp "$infile" $jav
-    ${SUNSHINE} transform -n "Explicate injections" -l "${JAVADIR}" -p . -i ${infile%.java}.jav > ${infile%.java}.aterm 2> /dev/null
+    ## Parse files to ATerm
+    testaterm=$(mktemp -p . "${testname}.XXXXX.aterm")
+    printf "Program([" > "$testaterm"
+    sep=""
+    for infile in $infiles
+    do
+       aterm="${infile%.java}.aterm"
+       if [ -f "$aterm" -a ! "$infile" -nt "$aterm" ]; then
+           echo "Use cached $aterm"
+       else
+           echo "Parse $infile to $aterm"
+           jav="${infile%.java}.jav"
+           cp "$infile" "$jav"
+           ${SUNSHINE} transform -n "Explicate injections" -l "${JAVADIR}" -p . -i "$jav" >/dev/null 2>&1
+           rm -f "$jav"
+       fi
+       printf "$sep" >> "$testaterm"
+       if [ -z "$sep" ]; then sep=", "; fi
+       cat "$aterm" >> "$testaterm"
+    done
+    printf "])" >> "$testaterm"
 
-    # run statix on the aterm
-    statix check -I $DIR/../src/ java ${infile%.java}.aterm 2>&1 | tee ${infile%.java}.stx.out
+    ## Run Statix on the ATerm
+    statix check -I $DIR/../src/ java "$testaterm" 2>&1 | tee "${testname}.stx.out"
     stx_ok=${PIPESTATUS[0]}
+    rm -f "$testaterm"
+    if [ $stx_ok -eq 0 ]; then
+        echo "Statix pass"
+    else
+        echo "Statix fail"
+    fi
 
     # compute test result by comparison
     if [ $stx_ok -eq 65 ]; then
-        printf "$STUCK $infile"
+        printf "$STUCK $testfile\n"
     elif agree $stx_ok $java_ok && agree $java_ok $positive; then
-        printf "$SUCCESS $infile"
+        printf "$SUCCESS $testfile\n"
     else
-        printf "$FAILURE $infile"
+        printf "$FAILURE $testfile\n"
     fi
 done

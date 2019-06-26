@@ -10,7 +10,12 @@ import java.packages.compilation_units
 // There is no distinction between 'inputs' and 'outputs',
 // But we like to write scopes before the turnstile in the
 // mathematical notation to denote their role as context.
-main(cu) :- {s}
+main(p) :- {s}
   new s,
-  compilation-unit-ok(s, cu).
+  p match
+    { Program(cus) ->
+        compilation-units-ok(s, cus)
+    | cu ->
+        compilation-unit-ok(s, cu)
+    }.
 

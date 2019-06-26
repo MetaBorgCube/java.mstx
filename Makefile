@@ -6,7 +6,7 @@ SUNSHINE_URL =  http://artifacts.metaborg.org/service/local/repositories/release
 SUNSHINE_JAR =  bin/org.metaborg.sunshine2-$(SPX_VERSION).jar
 SPEC         =  src/java.mstx
 TESTS        ?= tests/ # directory
-TESTRE       ?= '*.java' # iname
+TESTRE       ?= '*' # iname
 
 ## external commands with configuration
 MAVEN_OPTS   = "-Xms512m -Xmx1024m -Xss16m"
@@ -16,8 +16,8 @@ PARSE_JAVA   = $(SUNSHINE) transform -n "Explicate injections" -l lib/java.spfx/
 STATIX       = statix $(SPEC)
 JAVAC        = javac
 
-JAVA_TESTS   = $(shell find $(TESTS) -name $(TESTRE))
-
+JAVA_SOURCES = $(shell find $(TESTS) -type f -name $(TESTRE))
+JAVA_TESTS   = $(shell find $(TESTS) -name $(TESTRE:%=%.java) -not -path "*/*.java/*")
 TEST_TARGETS = $(JAVA_TESTS:%.java=%.result)
 
 .PHONY: all test
@@ -67,7 +67,7 @@ test-results:
 ## Cleaning
 
 test-clean:
-	@find . -name "*.class" -exec rm {} \;
-	@find . -name "*.aterm" -exec rm {} \;
-	@find . -name "*.result" -exec rm {} \;
-	@find . -name "*.out" -exec rm {} \;
+	@find $(TESTS) -name "*.classes" -exec rm -rf {} \;
+	@find $(TESTS) -name "*.aterm" -exec rm -f {} \;
+	@find $(TESTS) -name "*.result" -exec rm -f {} \;
+	@find $(TESTS) -name "*.out" -exec rm -f {} \;
