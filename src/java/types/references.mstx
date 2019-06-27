@@ -217,10 +217,3 @@ type-formal-params(ty, ftps) :- ty match
   | INTF(_,gens)   -> ftps == gens
   }.
 
-lexical-class-type(s, id, ty) :- {p}
-  lexical-type-name(s, id, p)
-, datum(p, (id, ty)).
-
-inner-class-type(s, id, ty) :- {p}
-  member-type-name(s, id, p)
-, datum(p, (id, ty)).

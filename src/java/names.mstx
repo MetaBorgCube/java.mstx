@@ -40,7 +40,7 @@ member-package-name(s, id, p) :- {pkgs, idpkgs, idpkgs}
 type-name-ok(s, tn, p) :- tn match
   { TypeName(id) ->
       lexical-type-name(s, id, p)
-  | TypeName(ptn, id) -> {n, p', s', types, idtypes}
+  | TypeName(ptn, id) -> {n, s', types, idtypes}
       package-or-type-name-ok(s, ptn, n)
     , n match
         { PKG(p') ->

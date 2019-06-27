@@ -110,29 +110,20 @@ unqualified-instance-ok(s, ui, ty) :- ui match
   { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
     {classType, tys, tas, tydecl}
     // instantiated type
-      unqualified-instance-type-ok(s, id, qualifiedIds, tydecl)
+      instance-type-ok(s, id, qualifiedIds, tydecl)
     , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
 
     , expressions-ok(s, expressions, tys)
     // TODO constructor checking
 
     , ty == OBJECT(tydecl, tas)
-  }.
-
-unqualified-instance-type-ok(s, id, qualifiedIds, ty) :- qualifiedIds match
-  { [] -> {reached}
-      lexical-class-type(s, id, ty)
-  | QualifiedId(_, id'):qualifiedIds -> {reached, tydecl, tas, s_ty'}
-      unqualified-instance-type-ok(s, id, qualifiedIds, OBJECT(tydecl, tas))
-    , type-scope(tydecl, s_ty')
-    , inner-class-type(s_ty', id, ty)
   }.
 
 qualified-instance-ok(s, ui, s_cls, ty) :- ui match
   { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
     {classType, tys, tydecl, tas}
     // instantiated type
-      qualified-instance-type-ok(s_cls, id, qualifiedIds, tydecl)
+      instance-type-ok(s_cls, id, qualifiedIds, tydecl)
     , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
     , expressions-ok(s, expressions, tys)
     // TODO constructor checking
@@ -140,11 +131,33 @@ qualified-instance-ok(s, ui, s_cls, ty) :- ui match
     , ty == OBJECT(tydecl, tas)
   }.
 
-qualified-instance-type-ok(s_ty, id, qualifiedIds, ty) :- qualifiedIds match
-  { [] -> {reached}
-      inner-class-type(s_ty, id, ty)
-  | QualifiedId(_, id'):qualifiedIds -> {s_ty', tydecl, tas, reached}
-      qualified-instance-type-ok(s_ty, id, qualifiedIds, OBJECT(tydecl, tas))
-    , type-scope(tydecl , s_ty')
-    , inner-class-type(s_ty', id, ty)
+// so much duplication down here
+
+instance-type-ok(s, id, qids, ty) :- qids match
+  { [] -> {p}
+      lexical-type-name(s, id, p)
+    , datum(p, (id, ty))
+  | QualifiedId(_, id'):qids -> {n, s'}
+      lexical-package-or-type-name(s, id, n)
+    , n match
+        { PKG(p) ->
+            package-scope(p, s')
+          , instance-type-ok(s', id', qids, ty)
+        | TYPE(p) -> {ty'}
+            datum(p, (id, ty'))
+          , type-scope(ty', s')
+          , instance-type-ok2(s', id', qids, ty)
+        }
   }.
+
+instance-type-ok2(s, id, qids, ty) :- qids match
+  { [] -> {p}
+      member-type-name(s, id, p)
+    , datum(p, (id, ty))
+  | QualifiedId(_, id'):qids -> {p, ty', s'}
+      member-type-name(s, id, p)
+    , datum(p, (id, ty'))
+    , type-scope(ty', s')
+    , instance-type-ok2(s', id', qids, ty)
+  }.
+
