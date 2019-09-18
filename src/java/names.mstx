@@ -34,7 +34,7 @@ package-name-ok(s, pn, decl) :- pn match
     , member-package-name(s_pkg, id, decl)
   }.
 
-lexical-package-name(s, id, decl) :- {pkgs, idpkgs, idpkgs', s_pkg}
+lexical-package-name(s, id, decl) :- {pkgs, idpkgs, idpkgs'}
   query s
         (`LEX|`CU)* `PKG // LEX-PKG-RE
         as pkgs
@@ -42,18 +42,23 @@ lexical-package-name(s, id, decl) :- {pkgs, idpkgs, idpkgs', s_pkg}
 , min idpkgs lexico(
         `PKG < `LEX // PKG-ORD
       ) idpkgs'
-, new s_pkg -> decl
-, decl == (id, PKG(s_pkg))
-, every idpkgs' (s_pkg' -> s_pkg -[ `IMP ]-> s_pkg').
+, paths-to-package-name(idpkgs', decl).
 
-member-package-name(s, id, decl) :- {pkgs, idpkgs, p}
+member-package-name(s, id, decl) :- {pkgs, idpkgs}
   query s
         `IMP? `PKG // MEM-PKG-RE
         as pkgs
 , filter pkgs ((id', _) where id' == id) idpkgs
-, only(idpkgs, p)
- // ????
-, datum(p, decl).
+, paths-to-package-name(idpkgs, decl).
+
+paths-to-package-name(ps, decl) :- {id, s_pkg}
+  new s_pkg -> decl
+, decl == (id, PKG(s_pkg))
+, every ps (p -> {decl', s_pkg'}
+             datum(p, decl')
+           , package-decl-scope(decl', s_pkg')
+           , s_pkg -[ `IMP ]-> s_pkg'
+           ).
 
 
 
@@ -71,22 +76,24 @@ type-name-ok(s, tn, decl) :- tn match
     , member-type-name(s', id, decl)
   }.
 
-lexical-type-name(s, id, decl) :- {types, idtypes, idtypes', p}
+lexical-type-name(s, id, decl) :- {types, idtypes, idtypes'}
   query s
         (`LEX|`CU)* `IMP? `EXT* `IMPL* `TYPE // LEX-TYPE-RE
         as types
 , filter types ((id', _) where id' == id) idtypes
 , min idtypes @typeord idtypes'
-, only(idtypes', p)
-, datum(p, decl).
+, paths-to-type-name(idtypes', decl).
 
-member-type-name(s, id, decl) :- {types, idtypes, idtypes', p}
+member-type-name(s, id, decl) :- {types, idtypes, idtypes'}
   query s
         `EXT* `IMPL* `TYPE // MEM-TYPE-RE
         as types
 , filter types ((id', _) where id' == id) idtypes
 , min idtypes @typeord idtypes'
-, only(idtypes, p)
+, paths-to-type-name(idtypes, decl).
+
+paths-to-type-name(ps, decl) :- {p}
+  only(ps, p)
 , datum(p, decl).
 
 
@@ -117,38 +124,44 @@ package-or-type-name-ok(s, ptn, name) :- ptn match
   }.
 
 lexical-package-or-type-name(s, id, name) :- 
-  {names, id-names, id-names', id-names'', p, l, decl'}
+  {names, id-names, id-names', id-names'', l}
   query s
     (`LEX|`CU)* `PKG | (`LEX|`CU)* `IMP? `EXT* `IMPL* `TYPE // LEX-PKG-OR-TYPE-RE
     as names
   , filter names ((id', _) where id' == id) id-names
   , min id-names reverse-lexico(`TYPE < `PKG) id-names'
   , min id-names' @pkg-or-type-ord id-names''
-  // kaput
-  , only(id-names'', p)
-  , tgt-lbl(p, l)
-  , datum(p, decl')
+  , inhabited(id-names'')
+  , every id-names'' (p -> tgt-lbl(p, l))
   , l match
-    { `TYPE -> name == TYPE(decl')
-    | `PKG  -> name == PKG(decl')
+    { `TYPE -> {decl}
+        paths-to-type-name(id-names'', decl)
+      , name == TYPE(decl)
+    | `PKG  -> {decl}
+        paths-to-package-name(id-names'', decl)
+      , name == PKG(decl)
     }.
 
 member-package-or-type-name(s, id, name) :- 
-  {names, id-names, id-names', id-names'', p', l, decl''}
+  {names, id-names, id-names', id-names'', l}
   query s
     `IMP? `PKG | `EXT* `IMPL* `TYPE // MEM-PKG-OR-TYPE-RE
     as names
   , filter names ((id', _) where id' == id) id-names
   , min id-names reverse-lexico(`TYPE < `PKG) id-names'
   , min id-names' @pkg-or-type-ord id-names''
-  // kaput
-  , only(id-names'', p')
-  , tgt-lbl(p', l)
-  , datum(p', decl'')
+  , inhabited(id-names'')
+  , every id-names'' (p -> tgt-lbl(p, l))
   , l match
-    { `TYPE -> name == TYPE(decl'')
-    | `PKG  -> name == PKG(decl'')
+    { `TYPE -> {decl}
+        paths-to-type-name(id-names'', decl)
+      , name == TYPE(decl)
+    | `PKG  -> {decl}
+        paths-to-package-name(id-names'', decl)
+      , name == PKG(decl)
     }.
+
+
 
 // expression-name-ok : scope * ExpressionName * (string * Type)
 
@@ -164,22 +177,24 @@ expression-name-ok(s, en, decl) :- en match
         }
   }.
 
-lexical-expression-name(s, id, decl) :- {names, id-names, id-names', p}
+lexical-expression-name(s, id, decl) :- {names, id-names, id-names'}
   query s
         `LEX* `EXT* (`VAR|`FIELD) // LEX-EXPR-RE
         as names
 , filter names ((id', _) where id' == id) id-names
 , min id-names @expr-ord id-names'
-, only(id-names', p)
-, datum(p, decl).
+, paths-to-expression-name(id-names', decl).
 
-member-expression-name(s, id, decl) :- {names, id-names, id-names', p}
+member-expression-name(s, id, decl) :- {names, id-names, id-names'}
   query s
         `EXT* (`VAR|`FIELD) // MEM-EXPR-RE
         as names
 , filter names ((id', _) where id' == id) id-names
 , min id-names @expr-ord id-names'
-, only(id-names', p)
+, paths-to-expression-name(id-names', decl).
+
+paths-to-expression-name(ps, decl) :- {p}
+  only(ps, p)
 , datum(p, decl).
 
 
@@ -187,7 +202,7 @@ member-expression-name(s, id, decl) :- {names, id-names, id-names', p}
 // ambiguous-name-ok : scope * AmbiguousName * Name
 
 ambiguous-name-ok(s, an, name) :- an match
-  { AmbiguousName(id) -> {names, id-names, id-names', id-names'', p, decl', l}
+  { AmbiguousName(id) -> {names, id-names, id-names', id-names'', l}
     // local Var -> ExpressionName
     // static import Var -> ExpressionName
     // local Type -> TypeName
@@ -201,15 +216,21 @@ ambiguous-name-ok(s, an, name) :- an match
             `VAR < `TYPE, `VAR < `PKG, `FIELD < `TYPE, `FIELD < `PKG, `TYPE < `PKG
           ) id-names'
     , min id-names' @amb-ord id-names''
-    // kaput
-    , only(id-names'', p)
-    , datum(p, decl')
-    , tgt-lbl(p, l)
+    , inhabited(id-names'')
+    , every id-names'' (p -> tgt-lbl(p, l))
     , l match
-        { `VAR   -> name == EXPR(decl')
-        | `FIELD -> name == EXPR(decl')
-        | `TYPE  -> name == TYPE(decl')
-        | `PKG   -> name == PKG(decl')
+        { `VAR -> {decl}
+            paths-to-expression-name(id-names'', decl)
+          , name == EXPR(decl)
+        | `FIELD -> {decl}
+            paths-to-expression-name(id-names'', decl)
+          , name == EXPR(decl)
+        | `TYPE -> {decl}
+            paths-to-type-name(id-names'', decl)
+          , name == TYPE(decl)
+        | `PKG -> {decl}
+            paths-to-package-name(id-names'', decl)
+          , name == PKG(decl)
         }
   | AmbiguousName(an, id) -> {name'}
     // Pkg =>
@@ -237,6 +258,7 @@ method-name-ok(s, mn, p) :- mn match
   { MethodName(id) ->
       false
   }.
+
 
 
 // helper functions from declarations to scopes
