@@ -8,6 +8,7 @@ The following features are specified:
 - public `class` definitions
 - public fields/methods
 - class extension
+- nested and inner classes
 - interface implementation
 - variable declarations
 - method calls
