@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -eu
+
+cwd=$(pwd)
+if [ $# -eq 0 ]; then
+    dir=.
+else
+    dir=$1
+fi
+
+find $dir -type d -name '*.test'
