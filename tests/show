@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -eu
+
+testdir=$1
+javafiles=$(find "$testdir" -type f -name '*.java' | sort)
+for javafile in $javafiles; do
+    printf '[%s]\n' "${javafile#$testdir}"
+    cat $javafile
+    printf '\n'
+done
