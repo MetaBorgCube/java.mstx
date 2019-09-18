@@ -120,8 +120,6 @@ qualified-instance-ok(s, ui, s_cls, ty) :- ui match
     , ty == OBJECT(tydecl)
   }.
 
-// so much duplication down here
-
 instance-type-ok(s, id, qids, ty) :- qids match
   { [] -> {id'}
       lexical-type-name(s, id, (id', ty))

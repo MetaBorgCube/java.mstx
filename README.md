@@ -3,6 +3,8 @@
 We specify the binding of Scala objects with the various imports in Scala in Statix.
 The following features are specified:
 
+### Compound objects
+
 - public packages
 - public `interface` definitions
 - public `class` definitions
@@ -10,9 +12,18 @@ The following features are specified:
 - class extension
 - nested and inner classes
 - interface implementation
+
+### Statements and expressions
+
+- literals
 - variable declarations
 - method calls
 - return statements
+- `this` expressions
+- Qualified `this`
+- Casts on primitives and reference types
+- Variable assignment
+- Field access
 
 ## Installation
 
