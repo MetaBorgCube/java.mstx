@@ -8,7 +8,44 @@ listed between square brackets is omitted.
 
 * 3 Lexical Structure
 * 4 Types, Values, and Variables
-  - ??? (whatever is relevant for the rest)
+  * 4.1 The Kinds of Types and Values
+  * 4.2 ~~Primitive Types and Values~~
+  * 4.3 Reference Types and Values
+    * 4.3.1 Objects
+    * 4.3.2 The Class `Object`
+    * 4.3.3 ~~The Class `String`~~
+    * 4.3.4 When Reference Types are the Same
+  * 4.4 ~~Type Variables~~
+  * 4.5 ~~Parametrized Types~~
+  * 4.6 ~~Type Erasure~~
+  * 4.7 ~~Reifiable Types~~
+  * 4.8 ~~Raw Types~~
+  * 4.9 ~~Intersection Types~~
+  * 4.10 Subtyping
+    * 4.10.1 ~~Subtyping among Primitive Types~~
+    * 4.10.2 Subtyping among Class and Interface Types
+    * 4.10.3 ~~Subtyping among Array Types~~
+    * 4.10.4 Least Upper Bound
+    * 4.10.5 ~~Type Projections~~
+  * 4.11 Where Types are Used
+  * 4.12 Variables
+    * 4.12.1 ~~Variables of Primitive Type~~
+    * 4.12.2 Variables of Reference Type
+    * 4.12.3 Kinds of Variables
+      - ~~class variables~~
+      - instance variables
+      - ~~array components~~
+      - method parameters
+      - constructor parameters
+      - ~~lambda parameters~~
+      - ~~exception parameters~~
+      - local variables
+    * 4.12.4 ~~`final` Variables~~
+    * 4.12.5 ~~Initial Values of Variables~~
+    * 4.12.6 Types, Classes, and Interfaces
+      - class types
+      - ~~interface types~~ ???
+      - ~~type variables and arguments~~
 * 5 Conversions and Contexts
   * 5.1 Kinds of Conversions
     * 5.1.1 Identity Conversion
@@ -188,5 +225,4 @@ listed between square brackets is omitted.
 * 16 ~~Definite Assignment~~
 * 17 ~~Threads and Locks~~
 * 18 Type Inference
-  - ???
 * 19 Syntax
