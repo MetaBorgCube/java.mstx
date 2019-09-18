@@ -46,11 +46,13 @@ do
     testname="${testdir%.test}"
     javafiles="$(find "$testdir" -type f -name '*.java')"
 
-    if ! (echo "$testname" | grep -s "\.no")
-    then
-        positive=0
+    if (echo "$testname" | grep -s "\.yes$") then
+       positive=1
+    elif (echo "$testname" | grep -s "\.no$") then
+       positive=0
     else
-        positive=1
+       printf "[$PANIC:EXPECT] Missing test expectation (yes/no) for $testdir\n"
+       exit 1
     fi
     echo "Expect $(expect $positive)"
 
