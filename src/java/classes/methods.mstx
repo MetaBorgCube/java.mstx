@@ -19,9 +19,7 @@ method-declaration-ok(s, md) :- md match
     , method-body-ok(s_method, methodBody)
   }.
 
-method-modifiers-ok(mms) :- mms match
-  { Public():[] -> true
-  }.
+method-modifiers-ok(mms) :- true.
 
 // method-header-ok : scope * MethodHeader * (Id, Type)
 

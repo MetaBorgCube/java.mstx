@@ -56,9 +56,7 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
     , class-body-declarations-ok(s_cls, declarations)
   }. 
 
-class-modifiers-ok(cms) :- cms match
-  { Public():[] -> true
-  }.
+class-modifiers-ok(cms) :- true.
 
 // maybe-super-class-ok maps super-class-ok(*, list(*), *)
 

@@ -3,8 +3,7 @@
 A Mini Statix specification for a subset of Java 11. The aim is to
 support interesting name binding features.
 
-The following shows which features of the JLS11 we implement. Anything
-listed between square brackets is omitted.
+The following shows which features of the JLS11 we implement.
 
 * 3 Lexical Structure
 * 4 Types, Values, and Variables
@@ -73,6 +72,7 @@ listed between square brackets is omitted.
   * 6.4 Shadowing and Obscuring
   * 6.5 Determining the Meaning of a Name
   * 6.6 ~~ Access Control~~
+    - Access modifiers are ignored, and declarations are treated as public. 
   * 6.7 Fully Qualified Names and Canonical Names
 * 7 Packages
   * 7.1 Package members
@@ -115,7 +115,8 @@ listed between square brackets is omitted.
     * 8.4.3 Method Signature
     * 8.4.3 Method Modifiers
       - public
-      - ~~protected, private, package, abstract, static, final, synchronized, native, strictfp~~
+      - ~~protected, private, package, abstract, static, final, synchronized,
+        native, strictfp~~
     * 8.4.4 ~~Generic Methods~~
     * 8.4.5 Method Result
       - type

@@ -11,9 +11,7 @@ field-declaration-ok(s, fd) :- fd match
     , field-decls-ok(s, varDecls, s, ty)
   }.
 
-field-modifiers-ok(fms) :- fms match
-  { Public():[] -> true
-  }.
+field-modifiers-ok(fms) :- true.
 
 // field-decls-ok : scope * list(VarDecl) * Type
 

@@ -42,9 +42,7 @@ interface-declaration-ok(s_pkg, id) :- id match
     , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
   }. 
 
-interface-modifiers-ok(ims) :- ims match
-  { Public():[] -> true
-  }.
+interface-modifiers-ok(ims) :- true.
 
 
 // maybe-super-interfaces-ok maps super-interfaces-ok(*, list(*), *)

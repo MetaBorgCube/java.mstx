@@ -15,9 +15,7 @@ constructor-declaration-ok(s, cd) :- cd match
     , block-statements-ok(s, blockStatements)
   }.
 
-ctor-modifiers-ok(cms) :- cms match
-  { Public():[] -> true
-  }.
+ctor-modifiers-ok(cms) :- true.
 
 enclosing-type(s, decl) :- {types, closestTypes, p}
   query s `LEX*`SELF as types
