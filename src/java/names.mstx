@@ -86,7 +86,7 @@ lexical-type-name(s, id, decl) :- {types, idtypes, idtypes'}
 
 member-type-name(s, id, decl) :- {types, idtypes, idtypes'}
   query s
-        `EXT* `IMPL* `TYPE // MEM-TYPE-RE
+        `IMP? `EXT* `IMPL* `TYPE // MEM-TYPE-RE
         as types
 , filter types ((id', _) where id' == id) idtypes
 , min idtypes @typeord idtypes'
@@ -144,8 +144,9 @@ lexical-package-or-type-name(s, id, name) :-
 
 member-package-or-type-name(s, id, name) :- 
   {names, id-names, id-names', id-names'', l}
+  // FIXME if s is a pkg scope, we may need to traverse IMP to get to TYPE
   query s
-    `IMP? `PKG | `EXT* `IMPL* `TYPE // MEM-PKG-OR-TYPE-RE
+    `IMP? `PKG | `IMP? `EXT* `IMPL* `TYPE // MEM-PKG-OR-TYPE-RE
     as names
   , filter names ((id', _) where id' == id) id-names
   , min id-names reverse-lexico(`TYPE < `PKG) id-names'
