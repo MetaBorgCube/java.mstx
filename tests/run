@@ -41,10 +41,10 @@ function agree {
     [ $1 -eq 0 -a $2 -eq 0 ] || [ $1 -ne 0 -a $2 -ne 0 ]
 }
 
-for testfile in "$@"
+for testdir in "$@"
 do
-    testname="${testfile%.java}"
-    infiles="$(find "$testfile" -type f -name '*.java')"
+    testname="${testdir%.test}"
+    javafiles="$(find "$testdir" -type f -name '*.java')"
 
     if ! (echo "$testname" | grep -s "\.no")
     then
@@ -56,12 +56,12 @@ do
 
     ## Compile Java classes
     classes=$(mktemp -d -p . "${testname}.XXXXX.classes")
-    javac -d "$classes" $infiles 2>&1 | grep -v "Picked up JAVA_TOOL_OPTIONS" | tee "${testname}.javac.out"
+    javac -d "$classes" $javafiles 2>&1 | grep -v "Picked up JAVA_TOOL_OPTIONS" | tee "${testname}.javac.out"
     java_ok=${PIPESTATUS[0]}
     rm -rf "$classes"
     echo "JavaC $(expect $java_ok)"
     if ! agree $java_ok $positive; then
-        printf "[$PANIC:DISAGREE] $testfile\n"
+        printf "[$PANIC:DISAGREE] $testdir\n"
         continue
     fi
 
@@ -69,22 +69,23 @@ do
     testaterm=$(mktemp -p . "${testname}.XXXXX.aterm")
     printf "Program([" > "$testaterm"
     sep=""
-    for infile in $infiles
+    for javafile in $javafiles
     do
-       aterm="${infile%.java}.aterm"
-       if [ -f "$aterm" -a ! "$infile" -nt "$aterm" ]; then
+       filename="${javafile%.java}"
+       aterm="$filename.aterm"
+       if [ -f "$aterm" -a ! "$javafile" -nt "$aterm" ]; then
            echo "Use cached $aterm"
        else
-           echo "Parse $infile to $aterm"
-           jav="${infile%.java}.jav"
-           cp "$infile" "$jav"
-           ${SUNSHINE} transform -n "Explicate injections" -l "${JAVADIR}" -p . -i "$jav" 2>&1 >/dev/null | tee "${infile%.java}.parse.out"
+           echo "Parse $javafile to $aterm"
+           javfile="$filename.jav"
+           cp "$javafile" "$javfile"
+           ${SUNSHINE} transform -n "Explicate injections" -l "${JAVADIR}" -p . -i "$javfile" 2>&1 >/dev/null | tee "$filename.parse.out"
            parse_ok=${PIPESTATUS[0]}
            if [ $parse_ok -ne 0 ]; then
-               printf "[$PANIC:PARSE] Parsing failed for $infile\n"
+               printf "[$PANIC:PARSE] Parsing failed for $javafile\n"
                continue 2
            fi
-           rm -f "$jav"
+           rm -f "$javfile"
        fi
        printf "$sep" >> "$testaterm"
        if [ -z "$sep" ]; then sep=", "; fi
@@ -93,7 +94,7 @@ do
     printf "])" >> "$testaterm"
 
     ## Run Statix on the ATerm
-    statix check -I $DIR/../src/ java "$testaterm" 2>&1 | tee "${testname}.stx.out"
+    statix check -I $DIR/../src/ java "$testaterm" 2>&1 | tee "$testname.stx.out"
     stx_ok=${PIPESTATUS[0]}
     rm -f "$testaterm"
     echo "Statix $(expect $stx_ok)"
@@ -101,13 +102,13 @@ do
     # compute test result by comparison
     if [ $stx_ok -eq 0 -o $stx_ok -eq 64 ]; then
         if agree $stx_ok $positive; then
-            printf "[$SUCCESS] $testfile\n"
+            printf "[$SUCCESS] $testdir\n"
         else
-            printf "[$FAILURE] $testfile\n"
+            printf "[$FAILURE] $testdir\n"
         fi
     elif [ $stx_ok -eq 65 ]; then
-        printf "[$PANIC:STUCK] $testfile\n"
+        printf "[$PANIC:STUCK] $testdir\n"
     else
-        printf "[$PANIC] Statix failed on $testfile\n"
+        printf "[$PANIC] Statix failed on $testdir\n"
     fi
 done

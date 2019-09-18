@@ -16,9 +16,8 @@ PARSE_JAVA   = $(SUNSHINE) transform -n "Explicate injections" -l lib/java.spfx/
 STATIX       = statix $(SPEC)
 JAVAC        = javac
 
-JAVA_SOURCES = $(shell find $(TESTS) -type f -name $(TESTRE))
-JAVA_TESTS   = $(shell find $(TESTS) -name $(TESTRE:%=%.java) -not -path "*/*.java/*")
-TEST_TARGETS = $(JAVA_TESTS:%.java=%.result)
+TEST_SOURCES = $(shell find $(TESTS) -type d -name $(TESTRE:%=%.test))
+TEST_TARGETS = $(TEST_SOURCES:%.test=%.result)
 
 .PHONY: all test
 .PRECIOUS: %.aterm
@@ -55,7 +54,7 @@ javafront: $(JAVA_FRONT_ARCHIVE) sunshine
 	$(PARSE_JAVA) $(<:%.java=%.jav) > $@
 	rm -f $(<:%.java=%.jav)
 
-%.result: %.java src/
+%.result: %.test src/
 	@./tests/run $< | tee $@ | grep "FAILURE\|SUCCESS\|PANIC"
 
 test: $(TEST_TARGETS)
