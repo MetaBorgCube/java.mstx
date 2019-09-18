@@ -8,7 +8,12 @@ local-variable-declaration-statement-ok(s, lvds) :- lvds match
 
 local-variable-declaration-ok(s, lvd) :- lvd match
   { LocalVarDecl(variableModifiers, unannType, varDecls) -> {ty, ty'}
-      unann-type-ok(s, unannType, ty)
+      variable-modifiers-ok(variableModifiers)
+    , unann-type-ok(s, unannType, ty)
     , var-decls-ok(s, varDecls, s, ty')
     , sub-type(ty, ty')
+  }.
+
+variable-modifiers-ok(vms) :- vms match
+  { Public():[] -> true
   }.

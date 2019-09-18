@@ -14,31 +14,37 @@ no-implements-cycle(s, type) :- {parents, matches}
 
 interface-declaration-ok(s_pkg, id) :- id match
   { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> 
-    {s_header, s_intf, s_this, self, tps}
-      new s_header
+    {s_header, s_intf, s_this, self}
+      interface-modifiers-ok(interfaceModifiers)
+
+    , new s_header
     , new s_intf -> (id, self)
     , no-duplicate-type(s_pkg, id, self)
     , no-implements-cycle(s_intf, self)
 
     // generics
-    , maybe-type-parameter-decls-ok(s_header, maybeTypeParameters, tps)
+    , maybe-type-parameters-ok(s_header, maybeTypeParameters)
 
     // header
     , maybe-extends-interfaces-ok(s_header, maybeExtendsInterfaces, s_intf)
 
-    , self == INTF(s_intf, tps)
+    , self == INTF(s_intf)
     , s_intf   -[ `SELF ]-> s_intf
     , s_intf   -[ `LEX  ]-> s_header
     , s_header -[ `LEX  ]-> s_pkg
     , s_pkg    -[ `TYPE ]-> s_intf
 
     // this
-    , new s_this -> OBJECT(self, tps)
+    , new s_this -> OBJECT(self)
     , s_intf -[ `THIS ]-> s_this
     
     // body
     , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
   }. 
+
+interface-modifiers-ok(ims) :- ims match
+  { Public():[] -> true
+  }.
 
 
 // maybe-super-interfaces-ok maps super-interfaces-ok(*, list(*), *)
@@ -91,7 +97,7 @@ implement-interfaces(is, s_this) :- is match
 // implement-interface : TYPE * scope
 
 implement-interface(i, s_this) :- i match
-  { OBJECT(INTF(s_intf, _), targs) -> s_this -[ `IMPL(targs) ]-> s_intf }.
+  { OBJECT(INTF(s_intf)) -> s_this -[ `IMPL ]-> s_intf }.
 
 // maybe-extendsinterfaces-ok maps extends-interfaces-ok(*, list(*))
 

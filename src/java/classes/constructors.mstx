@@ -5,12 +5,18 @@ import java.statements.blocks
 
 constructor-declaration-ok(s, cd) :- cd match
   { ConstrDecl(ctorModifiers, maybeTypeParameters, id, formalParams, maybeThrows, maybeCtorInvocation, blockStatements) -> {s_ctor, ty, tys}
-      new s_ctor -> CTOR(tys)
+      ctor-modifiers-ok(ctorModifiers)
+
+    , new s_ctor -> CTOR(tys)
     , s_ctor -[ `LEX ]-> s
     , s -[ `CTOR ]-> s_ctor
     , enclosing-type(s, (id, ty))
     , formal-params-ok(s_ctor, formalParams, tys)
     , block-statements-ok(s, blockStatements)
+  }.
+
+ctor-modifiers-ok(cms) :- cms match
+  { Public():[] -> true
   }.
 
 enclosing-type(s, decl) :- {types, closestTypes, p}

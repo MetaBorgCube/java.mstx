@@ -2,9 +2,9 @@ import stdlib.paths
 
 import java.classes.this
 import java.expressions.variables
+import java.generics
 import java.literals
 import java.names
-import java.normalization
 import java.subtype
 import java.types.references
 
@@ -24,13 +24,12 @@ expression-ok(s, e, ty) :- e match
   { Eq(e1, e2) -> {ty1, ty2}
       expression-ok(s, e1, ty1)
     , expression-ok(s, e2, ty2)
-    , true // how should ty1 & ty2 agree?
+    , false // how should ty1 & ty2 agree?
     , ty == BOOLEAN()
   | This() ->
       this-type(s, ty)
-  | QThis(typeName) -> {x, p, ty_this}
-      type-name-ok(s, typeName, p)
-    , datum(p, (x, ty))
+  | QThis(typeName) -> {x, x', ty_this}
+      type-name-ok(s, typeName, (x', ty))
     , this-type(s, ty_this)
     , sub-type(ty_this, ty)
   | CastPrimitive(primitiveType, e) -> {ty_e}
@@ -38,11 +37,8 @@ expression-ok(s, e, ty) :- e match
     , expression-ok(s, e, ty_e)
     , sub-type(ty_e, ty)
   | CastReference(referenceType, additionalBounds, e) -> {ty_e}
-      reference-type-ok(s, referenceType, ty)
-    , additionalBounds match
-        { []  -> true
-        | _:_ -> false // TODO create anonymous type
-        }
+      additionalBounds == [] // ????
+    , reference-type-ok(s, referenceType, ty)
     , expression-ok(s, e, ty_e)
     , sub-type(ty_e, ty)
   | Assign(lhs, e) -> {ty_e}
@@ -59,9 +55,8 @@ expression-ok(s, e, ty) :- e match
     , qualified-instance-ok(s, unqualifiedInstance, s_ty, ty)
   | L2E(literal) ->
       literal-type(s, literal, ty)
-  | EN2E(en) -> {x, p}
-      expression-name-ok(s, en, p)
-    , normalized-field-ty(p, [], ty)
+  | EN2E(en) -> {x}
+      expression-name-ok(s, en, (x, ty))
   }.
 
 lhs-ok(s, lhs, ty) :- lhs match
@@ -76,88 +71,78 @@ lhs-ok(s, lhs, ty) :- lhs match
 
 field-access-ty(s, fa, ty) :- {p} 
   fa match
-    { Field(e, id) -> {s_type, reached, targs, tydecl, gens}
-        expression-ok(s, e, OBJECT(tydecl, targs))
+    { Field(e, id) -> {s_type, reached, tydecl, id'}
+        expression-ok(s, e, OBJECT(tydecl))
       , type-scope(tydecl, s_type)
       , query s_type `EXT*`FIELD as reached
-      , unambiguous-field(reached, id, p)
-      , normalized-field-ty(p, targs, ty)
-    | SuperField(id) -> {super, tydecl, targs, reached, gens}
-        super-type(s, OBJECT(tydecl, targs))
+      , unambiguous-field(reached, id, (id', ty))
+    | SuperField(id) -> {super, tydecl, reached, id'}
+        super-type(s, OBJECT(tydecl))
       , type-scope(tydecl, super)
       , query super `EXT*`FIELD as reached
-      , unambiguous-field(reached, id, p)
-      , normalized-field-ty(p, targs, ty)
+      , unambiguous-field(reached, id, (id', ty))
     // | QSuperField(typeName, id) -> {ty_this, reached, s_cls, p, x}
-    //         this-type(s, ty_this)
-    //         , type-name-ok(s, typeName, p)
-    //         , datum(p, (x, CLASS(s_cls)))
-    //         , sub-type(ty_this, CLASS(s_cls))
-    //         , query s_cls `EXT*`VAR as reached
-    //         , unambiguous-field(reached, id, p)
+    //     ...
     }.
 
-unambiguous-field(reached, id, p) :- {matched, visible}
+unambiguous-field(reached, id, decl) :- {matched, visible, p}
   filter reached ((id', _) where id' == id) matched
 , min matched
       lexico( `VAR < `LEX, `VAR < `EXT
             , `EXT < `LEX
             )
       visible
-, only(visible, p).
+, only(visible, p)
+, datum(p, decl).
 
 unqualified-instance-ok(s, ui, ty) :- ui match
   { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
-    {classType, tys, tas, tydecl}
+    {classType, tys, tydecl}
     // instantiated type
       instance-type-ok(s, id, qualifiedIds, tydecl)
-    , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
+    , maybe-type-arguments-ok(s, maybeTypeArguments)
 
     , expressions-ok(s, expressions, tys)
     // TODO constructor checking
 
-    , ty == OBJECT(tydecl, tas)
+    , ty == OBJECT(tydecl)
   }.
 
 qualified-instance-ok(s, ui, s_cls, ty) :- ui match
   { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
-    {classType, tys, tydecl, tas}
+    {classType, tys, tydecl}
     // instantiated type
       instance-type-ok(s_cls, id, qualifiedIds, tydecl)
-    , maybe-type-arguments-ok(s, maybeTypeArguments, tas)
+    , maybe-type-arguments-ok(s, maybeTypeArguments)
     , expressions-ok(s, expressions, tys)
     // TODO constructor checking
 
-    , ty == OBJECT(tydecl, tas)
+    , ty == OBJECT(tydecl)
   }.
 
 // so much duplication down here
 
 instance-type-ok(s, id, qids, ty) :- qids match
-  { [] -> {p}
-      lexical-type-name(s, id, p)
-    , datum(p, (id, ty))
-  | QualifiedId(_, id'):qids -> {n, s'}
-      lexical-package-or-type-name(s, id, n)
-    , n match
-        { PKG(p) ->
-            package-scope(p, s')
+  { [] -> {id'}
+      lexical-type-name(s, id, (id', ty))
+  | QualifiedId(_, id'):qids -> {name, s'}
+      lexical-package-or-type-name(s, id, name)
+    , name match
+        { PKG(decl') ->
+            package-decl-scope(decl', s')
           , instance-type-ok(s', id', qids, ty)
-        | TYPE(p) -> {ty'}
-            datum(p, (id, ty'))
-          , type-scope(ty', s')
+        | TYPE(decl') -> {ty'}
+            type-decl-scope(decl', s')
           , instance-type-ok2(s', id', qids, ty)
         }
   }.
 
 instance-type-ok2(s, id, qids, ty) :- qids match
-  { [] -> {p}
-      member-type-name(s, id, p)
-    , datum(p, (id, ty))
-  | QualifiedId(_, id'):qids -> {p, ty', s'}
-      member-type-name(s, id, p)
-    , datum(p, (id, ty'))
-    , type-scope(ty', s')
+  { [] -> {id'}
+      member-type-name(s, id, (id', ty))
+  | QualifiedId(_, id'):qids -> {decl, s'}
+      member-type-name(s, id, decl)
+    , type-decl-scope(decl, s')
     , instance-type-ok2(s', id', qids, ty)
   }.
 

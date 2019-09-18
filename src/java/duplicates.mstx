@@ -2,6 +2,6 @@ import stdlib.sets
 
 // s contains no other `TYPE declarations with the given name than ty
 no-duplicate-type(s, name, ty) :- {defs, matches}
-    query s `TYPE as defs
+    query s `IMP? `PKG | `TYPE as defs
   , filter defs ((name', ty') where name' == name, ty' != ty) matches
   , empty(matches).

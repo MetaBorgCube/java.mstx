@@ -25,8 +25,10 @@ no-class-cycle(s, type) :- {parents, matches}
 
 normal-class-declaration-ok(s_pkg, ncd) :- ncd match
   { ClassDeclaration(modifiers, id, mTypeParameters, mSuperClass, mSuperInterfaces, declarations) -> 
-    {s_cls, s_header, tps, s_this, self}
-      new s_header
+    {s_cls, s_header, s_this, self}
+      class-modifiers-ok(modifiers)
+
+    , new s_header
     , new s_cls -> (id, self)
 
     // the declaration and prohibit duplicates
@@ -35,24 +37,28 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
     , no-class-cycle(s_cls, self)
 
     // generics
-    , maybe-type-parameter-decls-ok(s_header, mTypeParameters, tps)
+    , maybe-type-parameters-ok(s_header, mTypeParameters)
 
     // check the header
     , maybe-super-class-ok(s_header, mSuperClass, s_cls)
     , maybe-super-interfaces-ok(s_header, mSuperInterfaces, s_cls)
 
-    , self == CLASS(s_cls, tps)
+    , self == CLASS(s_cls)
     , s_cls    -[ `SELF ]-> s_cls
     , s_cls    -[ `LEX  ]-> s_header
     , s_header -[ `LEX  ]-> s_pkg
 
     // this
-    , new s_this -> OBJECT(self, tps)
+    , new s_this -> OBJECT(self)
     , s_cls -[ `THIS ]-> s_this
 
     // body
     , class-body-declarations-ok(s_cls, declarations)
   }. 
+
+class-modifiers-ok(cms) :- cms match
+  { Public():[] -> true
+  }.
 
 // maybe-super-class-ok maps super-class-ok(*, list(*), *)
 
@@ -64,10 +70,9 @@ maybe-super-class-ok(s, sc, s_this) :- sc match
 // superclass-ok : scope * SuperClass * scope
 
 super-class-ok(s, sc, s_this) :- sc match
-  { SuperClass(classType) -> {s_super, targs, formals}
-      class-type-ok(s, classType, OBJECT(CLASS(s_super, formals), targs))
-    , s_this -[ `EXT(targs) ]-> s_super
-    // TODO see if targs matches gens
+  { SuperClass(classType) -> {s_super}
+      class-type-ok(s, classType, OBJECT(CLASS(s_super)))
+    , s_this -[ `EXT ]-> s_super
   }.
 
 // class-body-declarations-ok maps class-body-declaration-ok(*, list(*))

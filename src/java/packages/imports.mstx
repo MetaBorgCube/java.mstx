@@ -9,19 +9,17 @@ imports-ok(s, is, s_cu) :- is match
   }.
 
 import-ok(s, i, s_cu) :- i match
-  { SingleTypeImport(tn) -> {p, type, s_type}
-      type-name-ok(s, tn, p)
-    , datum(p, type)
-    , new s_type -> type
+  { SingleTypeImport(tn) -> {decl, type, s_type}
+      type-name-ok(s, tn, decl)
+    , new s_type -> decl
     , s_cu -[ `TYPE ]-> s_type
-  | TypeImportOnDemand(ptn) -> {n, s_imp}
-      package-or-type-name-ok(s, ptn, n)
-    , n match
-        { PKG(p') ->
-            package-scope(p', s_imp)
-        | TYPE(p') -> {id', ty}
-            datum(p', (id', ty))
-          , type-scope(ty, s_imp)
+  | TypeImportOnDemand(ptn) -> {name, s_imp}
+      package-or-type-name-ok(s, ptn, name)
+    , name match
+        { PKG(decl') ->
+            package-decl-scope(decl', s_imp)
+        | TYPE(decl') -> {id', ty}
+            type-decl-scope(decl', s_imp)
         }
     , s_cu -[ `IMP ]-> s_imp
   }.

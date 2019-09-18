@@ -6,8 +6,13 @@ import java.subtype
 
 field-declaration-ok(s, fd) :- fd match
   { FieldDecl(fieldModifiers, unannType, varDecls) -> {ty}
-      unann-type-ok(s, unannType, ty)
+      field-modifiers-ok(fieldModifiers)
+    , unann-type-ok(s, unannType, ty)
     , field-decls-ok(s, varDecls, s, ty)
+  }.
+
+field-modifiers-ok(fms) :- fms match
+  { Public():[] -> true
   }.
 
 // field-decls-ok : scope * list(VarDecl) * Type

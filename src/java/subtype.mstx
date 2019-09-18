@@ -1,14 +1,14 @@
 // sub-type : Type * Type
 
 child-of(left, right) :- (left, right) match
-  { (CLASS(left, _), CLASS(right, _)) -> {reaches, matches, ty}
+  { (CLASS(left), CLASS(right)) -> {reaches, matches, ty}
       query left `EXT* as reaches
-      , filter reaches ((_, CLASS(cls, _)) where cls == right) matches
-      , only(matches, ty) // non-ambiguous super
-  | (CLASS(left, _), INTF(right, _))  -> {reaches, matches, ty}
+    , filter reaches ((_, CLASS(cls)) where cls == right) matches
+    , only(matches, ty) // non-ambiguous super
+  | (CLASS(left), INTF(right))  -> {reaches, matches, ty}
       query left `EXT*`IMPL* as reaches
-      , filter reaches ((_, INTF(intf, _)) where intf == right) matches
-      , inhabited(matches)
+    , filter reaches ((_, INTF(intf)) where intf == right) matches
+    , inhabited(matches)
   }.
 
 sub-types(txs, tys) :- (txs, tys) match
@@ -17,18 +17,16 @@ sub-types(txs, tys) :- (txs, tys) match
   }.
 
 sub-type(ty1, ty2) :- (ty1, ty2) match
-  {
-    (BYTE(), BYTE())                              -> true
-  | (SHORT(), SHORT())                            -> true
-  | (INT(), INT())                                -> true
-  | (LONG(), LONG())                              -> true
-  | (CHAR(), CHAR())                              -> true
-  | (FLOAT(), FLOAT())                            -> true
-  | (DOUBLE(), DOUBLE())                          -> true
-  | (BOOLEAN(), BOOLEAN())                        -> true
-
-  | (OBJECT(tydecl1, tps), OBJECT(tydecl2, tps')) ->
+  { (BYTE(), BYTE())                   -> true
+  | (SHORT(), SHORT())                 -> true
+  | (INT(), INT())                     -> true
+  | (LONG(), LONG())                   -> true
+  | (CHAR(), CHAR())                   -> true
+  | (FLOAT(), FLOAT())                 -> true
+  | (DOUBLE(), DOUBLE())               -> true
+  | (BOOLEAN(), BOOLEAN())             -> true
+  | (OBJECT(tydecl1), OBJECT(tydecl2)) ->
        child-of(tydecl1, tydecl2)
-     , sub-types(tps, tps')
-  | (NULL(), OBJECT(_,_))                         -> true 
+  | (NULL(), OBJECT(_))                -> true 
   }.
+

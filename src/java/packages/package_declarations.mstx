@@ -1,20 +1,35 @@
+import stdlib.paths
+import java.names
+
 package-declaration-ok(s, pd, s_pkg) :- {ids} pd match
   { None() ->
       ids == "":[] // anonymous package
   | Some(PackageDeclaration(annotations, ids')) ->
       ids == ids'
   }
-, package-decl(s, ids, s_pkg)
-, true. // TODO import other scopes of package `ids` using `IMP label
+, package-decl(s, ids, s_pkg).
 
 package-decl(s, ids, s_pkg) :- ids match
   { id:[] ->
       s_pkg -> (id, PKG(s_pkg))
     , s -[ `PKG ]-> s_pkg
     , s_pkg -[ `LEX ]-> s
+    , compose-package(s, id, s_pkg)
   | id:ids -> {s_pkg'}
       new s_pkg' -> (id, PKG(s_pkg'))
     , s -[ `PKG ]-> s_pkg'
     , s_pkg' -[ `LEX ]-> s
+    , compose-package(s, id, s_pkg')
     , package-decl(s_pkg', ids, s_pkg)
   }.
+
+compose-package(s, id, s_pkg) :- {pkgs, idpkgs}
+  query s
+        `IMP? `PKG
+        as pkgs
+, filter pkgs ((id', _) where id' == id) idpkgs
+, every idpkgs (p -> {decl, s_pkg'}
+    datum(p, decl)
+  , package-decl-scope(decl, s_pkg')
+  , s_pkg -[ `IMP ]-> s_pkg'
+  ).

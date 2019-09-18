@@ -11,11 +11,16 @@ import java.types.references
 
 method-declaration-ok(s, md) :- md match
   { MethodDecl(methodModifiers, methodHeader, methodBody) -> {s_method, decl}
-      new s_method -> decl
+      method-modifiers-ok(methodModifiers)
+    , new s_method -> decl
     , s_method -[ `LEX ]-> s
     , s -[ `METHOD ]-> s_method
     , method-header-ok(s_method, methodHeader, decl)
     , method-body-ok(s_method, methodBody)
+  }.
+
+method-modifiers-ok(mms) :- mms match
+  { Public():[] -> true
   }.
 
 // method-header-ok : scope * MethodHeader * (Id, Type)

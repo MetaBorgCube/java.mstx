@@ -1,5 +1,6 @@
 import stdlib.paths
 
+import java.generics
 import java.names
 
 
@@ -99,106 +100,82 @@ class-types-ok(s, cts, tys) :- cts match
 
 // class-type-ok : scope * ClassType -> TYPE
 
-class-type-ok(s, ct, ty) :- {p, id', cls, mtas, tas} ct match
+class-type-ok(s, ct, ty) :- {decl, id', cls, mtas} ct match
   { ClassType(annotations, id, maybeTypeArguments) ->
-      lexical-type-name(s, id, p)
+      annotations == [],
+      lexical-type-name(s, id, (id', cls))
     , mtas == maybeTypeArguments
   | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s'}
+      annotations == [],
       class-type-or-pkg-ok(s, classType, s')
-    , member-type-name(s', id, p)
+    , member-type-name(s', id, (id', cls))
     , mtas == maybeTypeArguments
   }
-, datum(p, (id', cls))
-, maybe-type-arguments-ok(s, mtas, tas)
-, ty == OBJECT(cls, tas).
+, maybe-type-arguments-ok(s, mtas)
+, ty == OBJECT(cls).
 
-class-type-or-pkg-ok(s, ct, s') :- {n, mtas} ct match
+class-type-or-pkg-ok(s, ct, s') :- {name, mtas} ct match
   { ClassType(annotations, id, maybeTypeArguments) ->
-      lexical-package-or-type-name(s, id, n)
+      lexical-package-or-type-name(s, id, name)
     , mtas == maybeTypeArguments
   | ClassOrInterfaceTypeMember(classType, annotations, id, maybeTypeArguments) -> {s'}
       class-type-or-pkg-ok(s, classType, s')
-    , member-package-or-type-name(s', id, n)
+    , member-package-or-type-name(s', id, name)
     , mtas == maybeTypeArguments
   }
-, n match
-    { PKG(p') ->
-        package-scope(p', s')
+, name match
+    { PKG(decl') ->
+        package-decl-scope(decl', s')
       , mtas == None()
-    | TYPE(p') -> {id', cls, tas}
-        datum(p', (id', cls))
-      , type-scope(cls, s')
-      , maybe-type-arguments-ok(s, mtas, tas)
+    | TYPE(decl') -> {id', cls}
+        type-decl-scope(decl', s')
+      , maybe-type-arguments-ok(s, mtas)
     }.
 
 
 
 // unann-class-type-ok : scope * UnannClassType
 
-unann-class-type-ok(s, uct, ty) :- {p, id', cls, mtas, tas} uct match
+unann-class-type-ok(s, uct, ty) :- {p, id', cls, mtas} uct match
   { ClassType(id, maybeTypeArguments) ->
-      lexical-type-name(s, id, p)
+      lexical-type-name(s, id, (id', cls))
     , mtas == maybeTypeArguments
   | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {s'}
       unann-class-type-or-pkg-ok(s, unannClassType, s')
-    , member-type-name(s', id, p)
+    , member-type-name(s', id, (id', cls))
     , mtas == maybeTypeArguments
   }
-, datum(p, (id', cls))
-, maybe-type-arguments-ok(s, mtas, tas)
-, ty == OBJECT(cls, tas).
+, maybe-type-arguments-ok(s, mtas)
+, ty == OBJECT(cls).
 
-unann-class-type-or-pkg-ok(s, ct, s') :- {n, mtas} ct match
+unann-class-type-or-pkg-ok(s, ct, s') :- {name, mtas} ct match
   { ClassType(id, maybeTypeArguments) ->
-      lexical-package-or-type-name(s, id, n)
+      lexical-package-or-type-name(s, id, name)
     , mtas == maybeTypeArguments
   | ClassOrInterfaceTypeMember(unannClassType, annotations, id, maybeTypeArguments) -> {s'}
       unann-class-type-or-pkg-ok(s, unannClassType, s')
-    , member-package-or-type-name(s', id, n)
+    , member-package-or-type-name(s', id, name)
     , mtas == maybeTypeArguments
   }
-, n match
-    { PKG(p') ->
-        package-scope(p', s')
+, name match
+    { PKG(decl') ->
+        package-decl-scope(decl', s')
       , mtas == None()
-    | TYPE(p') -> {id', cls, tas}
-        datum(p', (id', cls))
-      , type-scope(cls, s')
-      , maybe-type-arguments-ok(s, mtas, tas)
+    | TYPE(decl') -> {id', cls, tas}
+        type-decl-scope(decl', s')
+      , maybe-type-arguments-ok(s, mtas)
     }.
 
 
-// type-arguments-ok : scope * list(TypeArgument) * Types
-
-maybe-type-arguments-ok(s, maybeTypeArguments, tps) :- maybeTypeArguments match
-  { None()                    -> tps == []
-  | Some(TypeArguments(ftps)) -> type-arguments-ok(s, ftps, tps)
-  }.
-
-type-arguments-ok(s, typeArguments, tps) :- typeArguments match
-  { ta:tas -> {tp, tps'}
-      tps == tp:tps'
-    , type-argument-ok(s, ta, tp)
-    , type-arguments-ok(s, tas, tps')
-  | [] -> tps == []
-  }.
-
-// type-argument-ok : scope * TypeArgument * Type
-
-type-argument-ok(s, ta, tp) :- ta match
-  { RT2TA(rt) -> 
-      reference-type-ok(s, rt, tp)
-  }.
-
 is-class-or-interface-type(tp) :- tp match
-  { OBJECT(CLASS(_,_),_)  -> true
-  | OBJECT(INTF(_,_),_)   -> true
-  | otherwise             -> false
+  { OBJECT(CLASS(_)) -> true
+  | OBJECT(INTF(_))  -> true
+  | _                -> false
   }.
 
 is-interface-type(tp) :- tp match
-  { OBJECT(INTF(_,_),_)   -> true
-  | _ -> false }.
+  { OBJECT(INTF(_)) -> true
+  | _               -> false }.
 
 are-interface-types(tps) :- tps match
   { tp:tps    -> is-interface-type(tp), are-interface-types(tps)
@@ -206,14 +183,11 @@ are-interface-types(tps) :- tps match
   }.
 
 type-scope(ty, s_ty) :- ty match
-  { CLASS(s_cls,_) -> s_ty == s_cls
-  | INTF(s_intf,_) -> s_ty == s_intf
+  { CLASS(s_cls) -> s_ty == s_cls
+  | INTF(s_intf) -> s_ty == s_intf
   }.
 
-instance-scope(ty, s_ty) :- ty match { OBJECT(tydecl,_) -> type-scope(tydecl, s_ty) }.
-
-type-formal-params(ty, ftps) :- ty match
-  { CLASS(_,gens)  -> ftps == gens
-  | INTF(_,gens)   -> ftps == gens
+instance-scope(ty, s_ty) :- ty match
+  { OBJECT(tydecl) -> type-scope(tydecl, s_ty)
   }.
 
