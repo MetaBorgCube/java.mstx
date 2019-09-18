@@ -10,9 +10,33 @@ listed between square brackets is omitted.
 * 4 Types, Values, and Variables
   - ??? (whatever is relevant for the rest)
 * 5 Conversions and Contexts
-  - ??? (whatever is relevant for the rest)
+  * 5.1 Kinds of Conversions
+    * 5.1.1 Identity Conversion
+    * 5.1.2 ~~Widening Primitive Conversion~~
+    * 5.1.3 ~~Narrowing Primitive Conversion~~
+    * 5.1.4 ~~Widening and Narrowing Primitive Conversion~~
+    * 5.1.5 Widening Reference Conversion
+    * 5.1.6 Narrowing Reference Conversion
+    * 5.1.7 ~~Boxing Conversion~~
+    * 5.1.8 ~~Unboxing Conversion~~
+    * 5.1.9 ~~Unchecked Conversion~~
+    * 5.1.10 ~~Capture Conversion~~
+    * 5.1.11 ~~String Conversion~~
+    * 5.1.12 Forbidden Conversion
+    * 5.1.13 ~~Value Set Conversion~~
+  * 5.2 Assignment Contexts
+  * 5.3 Invocation Contexts
+  * 5.4 ~~String Contexts~~
+  * 5.5 Casting Contexts
+  * 5.6 ~~Numeric Contexts~~
 * 6 Names
-  - ??? (whatever is relevant for the rest)
+  * 6.1 Declarations
+  * 6.2 Names and Identifiers
+  * 6.3 Scope of a Declaration
+  * 6.4 Shadowing and Obscuring
+  * 6.5 Determining the Meaning of a Name
+  * 6.6 ~~ Access Control~~
+  * 6.7 Fully Qualified Names and Canonical Names
 * 7 Packages
   * 7.1 Package members
     - packages
