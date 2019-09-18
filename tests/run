@@ -43,7 +43,7 @@ function agree {
 
 for testdir in "$@"
 do
-    testname="${testdir%.test}"
+    testname="${testdir%.test*}"
     javafiles="$(find "$testdir" -type f -name '*.java')"
 
     if (echo "$testname" | grep -s "\.yes$") then
@@ -51,7 +51,7 @@ do
     elif (echo "$testname" | grep -s "\.no$") then
        positive=1
     else
-       printf "[$PANIC:EXPECT] Missing test expectation (yes/no) for $testdir\n"
+       printf "[$PANIC:EXPECTATION] $testdir\n"
        exit 1
     fi
     echo "Expect $(expect $positive)"
@@ -61,6 +61,12 @@ do
     javac -d "$classes" $javafiles 2>&1 | grep -v "Picked up JAVA_TOOL_OPTIONS" | tee "${testname}.javac.out"
     java_ok=${PIPESTATUS[0]}
     rm -rf "$classes"
+
+    if (grep -s "should be declared in a file named" "${testname}.javac.out") then
+        printf "[$PANIC:FILENAME] $testdir\n"
+        exit 1
+    fi
+
     echo "JavaC $(expect $java_ok)"
     if ! agree $java_ok $positive; then
         printf "[$PANIC:DISAGREE] $testdir\n"
