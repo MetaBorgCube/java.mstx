@@ -1,0 +1,168 @@
+# Java Specification
+
+A Mini Statix specification for a subset of Java. The aim is to
+support interesting name binding features.
+
+The following shows which features of the JLS we implement. Anything
+listed between square brackets is omitted.
+
+- Lexical Structure (3)
+- Types, Values, and Variables (4)
+  - ??? (whatever is relevant for the rest)
+- Conversions and Contexts (5)
+  - ??? (whatever is relevant for the rest)
+- Names (6)
+  - ??? (whatever is relevant for the rest)
+- Packages (7)
+  - Package members (7.1)
+    - packages
+    - type members
+      - classes
+      - [interfaces] ???
+  - Compilation units (7.3)
+  - Package declarations (7.4)
+    - named
+    - unnamed
+  - Import Declarations (7.5)
+    - Single-Type-Import Declarations (7.5.1)
+    - Type-Import-on-Demand Declarations (7.5.2)
+    - [Single-Static-Import Declarations] (7.5.3)
+    - [Static-Import-on-Demand Declarations] (7.5.4)
+- Classes (8)
+  - Class Declarations (8.1)
+    - Class Modifiers (8.1.1)
+      - public
+      - [protected, private, package, abstract, static, final, strictfp]
+    - [Generic Classes and Type Parameters] (8.1.2)
+    - Inner Classes (8.1.3)
+    - Superclasses and Subclasses (8.1.4)
+    - Class Body and Member Declarations (8.1.6)
+  - Class Members (8.2)
+  - Field Declarations (8.3)
+    - Field Modifiers (8.3.1)
+      - public
+      - [protected, package, private, static, final, transient, volatile]
+    - Field Initialization (8.3.2)
+      - variable initializer
+      - [class variables]
+      - instance variables
+    - [Restrictions on Field References in Initializers] (8.3.3)
+  - Method Declarations (8.4)
+    - Formal Parameters (8.4.1)
+      - [final]
+      - [variable arity parameter]
+    - Method Signature (8.4.3)
+    - Method Modifiers (8.4.3)
+      - public
+      - [protected, private, package, abstract, static, final, synchronized, native, strictfp]
+    - [Generic Methods] (8.4.4)
+    - Method Result (8.4.5)
+      - type
+      - void
+    - [Method Throws] (8.4.6)
+    - Method Body (8.4.7)
+    - Inheritance, Overriding, and Hiding (8.4.8)
+      - inherited methods
+      - [Overriding] (8.4.8.1)
+      - [Hiding] (8.4.8.2)
+      - [Requirements in Overriding and Hiding] (8.4.8.3)
+      - [Inheriting Methods with Override-Equivalent Signatures] (8.4.8.4)
+    - [Overloading] (8.4.9)
+  - Member type declarations (8.5)
+    - member class
+    - [member interface] ???
+    - [Static Member Type Declarations] (8.5.1)
+  - [Instance Initializers] (8.6)
+  - [Static Initializers] (8.7)
+  - Constructor Declarations (8.8)
+    - Formal Parameters (8.8.1)
+    - Constructor Signature (8.8.2)
+    - Constructor Modifiers (8.8.3)
+      - public
+      - [protected, package, private]
+    - [Generic Constructors] (8.8.4)
+    - [Constructor Throws] (8.8.5)
+    - Type of a Constructor (8.8.6)
+    - Constructor Body (8.8.7)
+      - [Explicit Constructor Invokations] (8.8.7.1)
+    - [Constructor Overloading] (8.8.8)
+    - [Default Constructor] (8.8.9)
+    - [Preventing Instantiation of a Class] (8.8.10)
+  - [Enum types] (8.9)
+- [Interfaces] (9)
+- [Arrays] (10)
+- [Exceptions] (11)
+- [Execution] (12)
+- [Binary Compatibility] (13)
+- Blocks and Statements (14)
+  - [Normal and Abrupt Completion of Statements] (14.1)
+  - Blocks (14.2)
+  - Local Class Declarations (14.3) ???
+  - Local Variable Declarations (14.4)
+    - [final]
+  - Statements (14.5)
+  - Empty Statement (14.6)
+  - [Labeled Statements] (14.7)
+  - Expression Statements (14.8)
+  - [The `if` Statement] (14.9)
+  - [The `assert` Statement] (14.10)
+  - [The `switch` Statement] (14.11)
+  - [The `while` Statement] (14.12)
+  - [The `do` Statement] (14.13)
+  - [The `for` Statement] (14.14)
+  - [The `break` Statement] (14.15)
+  - [The `continue` Statement] (14.16)
+  - The `return` Statement (14.17)
+  - [The `throw` Statement] (14.18)
+  - [The `synchronized` Statement] (14.19)
+  - [The `try` Statement] (14.20)
+  - [Unreachable Statements] (14.21)
+- Expressions (15)
+  - [Evaluation, Denotation, and Result] (15.1)
+  - Forms of Expressions (15.2)
+  - Type of an Expression (15.3)
+  - [FP-strict Expressions] (15.4)
+  - [Expressions and Run-Time Checks] (15.5)
+  - [Normal and Abrupt Completion of Evaluation] (15.6)
+  - [Evaluation Order] (15.7)
+  - Primary Expressions (15.8)
+    - [Lexical Literals] (15.8.1)
+    - [Class Literals] (15.8.2)
+    - `this` (15.8.3)
+    - Qualified `this` (15.8.4) ???
+    - Parenthesized Expressions (15.8.5)
+  - Class Instance Creation Expressions (15.9)
+    - Determining the Class being Instantiated (15.9.1)
+    - Determining Enclosing Instances (15.9.2)
+    - Choosing the Constructor and its Arguments (15.9.3)
+    - [Run-Time Evaluation of Class Instance Creation Expressions] (15.9.4)
+    - [Anonymous Class Declarations] (15.9.5)
+  - [Array Creation and Access Expressions] (15.10)
+  - Field Access Expressions (15.11)
+    - Field Access Using a Primary (15.11.1)
+    - [Accessing Superclass Members using `super`] (15.11.2)
+  - Method Invocation Expressions (15.12)
+    - [overloading]
+  - [Method Reference Expressions] (15.13)
+  - [Postfix Expressions] (15.14)
+  - [Unary Expression] (15.15)
+  - Cast Expression (15.16)
+  - [Multiplicative Operators] (15.17)
+  - [Additive Operators] (15.18)
+  - [Shift Operators] (15.19)
+  - [Relational Operators] (15.20)
+  - [Equality Operators] (15.21)
+  - [Bitwise and Logical Operators] (15.22)
+  - [Conditional-And Operator `&&`] (15.23)
+  - [Conditional-Or Operator `||`] (15.24)
+  - [Conditional Operator `?:`] (15.25)
+  - Assignment Operators (15.26)
+    - Simple Assignment Operator (15.26.1)
+    - [Compound Assignment Operators] (15.26.2)
+  - [Lambda Expressions] (15.27)
+  - [Constant Expressions] (15.28)
+- [Definite Assignment] (16)
+- [Threads and Locks] (17)
+- Type Inference (18)
+  - ???
+- Syntax (19)
