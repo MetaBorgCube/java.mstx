@@ -90,7 +90,7 @@ member-type-name(s, id, decl) :- {types, idtypes, idtypes'}
         as types
 , filter types ((id', _) where id' == id) idtypes
 , min idtypes @typeord idtypes'
-, paths-to-type-name(idtypes, decl).
+, paths-to-type-name(idtypes', decl).
 
 paths-to-type-name(ps, decl) :- {p}
   only(ps, p)
