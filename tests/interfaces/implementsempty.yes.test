@@ -1,0 +1,6 @@
+[B.java]
+public class B implements I {}
+
+[I.java]
+public interface I {}
+

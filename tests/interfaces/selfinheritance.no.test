@@ -1,0 +1,3 @@
+[I.java]
+public interface I extends I {}
+

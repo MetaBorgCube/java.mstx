@@ -1,0 +1,8 @@
+[A.java]
+public class A {}
+
+[Test.java]
+public class Test {
+    public A x;
+}
+

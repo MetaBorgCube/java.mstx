@@ -1,0 +1,10 @@
+[C.java]
+import p.A.B;
+public class C {}
+
+[p/A.java]
+package p;
+public class A {
+    public class C {}
+}
+

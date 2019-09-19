@@ -9,4 +9,4 @@ else
     dir=$1
 fi
 
-find $dir -type d -name '*.test'
+find $dir -type f -name '*.test'

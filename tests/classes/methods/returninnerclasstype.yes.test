@@ -1,0 +1,10 @@
+[A.java]
+public class A {
+    public class I {}
+}
+
+[B.java]
+public class B {
+    public A.I a() { return null; }
+}
+

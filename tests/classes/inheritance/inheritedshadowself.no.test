@@ -1,0 +1,12 @@
+[A.java]
+public class A {
+    public class B {}
+}
+
+[B.java]
+public class B extends A {
+    public B m() {
+        return this; // error
+    }
+}
+

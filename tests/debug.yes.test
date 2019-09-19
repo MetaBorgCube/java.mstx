@@ -1,0 +1,6 @@
+[p/A.java]
+package p;
+class A {}
+[p/B.java]
+package p;
+class B extends A {}

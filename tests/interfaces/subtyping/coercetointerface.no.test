@@ -1,0 +1,17 @@
+[A.java]
+public class A implements I {}
+
+[B.java]
+public class B {
+    public C c;
+    public I m() {
+	    return this.c;
+    }
+}
+
+[C.java]
+public class C {}
+
+[I.java]
+public interface I {}
+

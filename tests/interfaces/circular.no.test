@@ -1,0 +1,6 @@
+[I.java]
+public interface I extends J {}
+
+[J.java]
+public interface J extends I {}
+

@@ -16,7 +16,7 @@ PARSE_JAVA   = $(SUNSHINE) transform -n "Explicate injections" -l lib/java.spfx/
 STATIX       = statix $(SPEC)
 JAVAC        = javac
 
-TEST_SOURCES = $(shell find $(TESTS) -type d -name $(TESTRE:%=%.test))
+TEST_SOURCES = $(shell find $(TESTS) -type f -name $(TESTRE:%=%.test))
 TEST_TARGETS = $(TEST_SOURCES:%.test=%.result)
 
 .PHONY: all test
@@ -68,6 +68,6 @@ test-results:
 test-clean:
 	@find $(TESTS) -name "*.class" -exec rm -rf {} \;
 	@find $(TESTS) -name "*.classes" -exec rm -rf {} \;
-	@find $(TESTS) -name "*.aterm" -exec rm -f {} \;
+	@find $(TESTS) -name "*.sources" -exec rm -rf {} \;
 	@find $(TESTS) -name "*.result" -exec rm -f {} \;
 	@find $(TESTS) -name "*.out" -exec rm -f {} \;

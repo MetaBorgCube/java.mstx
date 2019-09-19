@@ -1,0 +1,5 @@
+[A.java]
+public class A {
+    public A f;
+}
+

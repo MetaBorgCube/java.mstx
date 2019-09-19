@@ -1,0 +1,6 @@
+[A.java]
+public class A {}
+
+[B.java]
+public class B extends A {}
+

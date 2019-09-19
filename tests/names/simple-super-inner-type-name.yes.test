@@ -1,0 +1,10 @@
+[A.java]
+public class A {
+    public class B {}
+}
+
+[C.java]
+public class C extends A {
+    public B f;
+}
+

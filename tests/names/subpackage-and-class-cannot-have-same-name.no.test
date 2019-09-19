@@ -1,0 +1,13 @@
+[A.java]
+import p.q.r;
+
+[p/q.java]
+package p;
+public class q {
+    public class r {}
+}
+
+[p/q/r.java]
+package p.q;
+public class r {}
+

@@ -41,49 +41,65 @@ function agree {
     [ $1 -eq 0 -a $2 -eq 0 ] || [ $1 -ne 0 -a $2 -ne 0 ]
 }
 
-for testdir in "$@"
-do
-    testname="${testdir%.test*}"
-    javafiles="$(find "$testdir" -type f -name '*.java')"
+for testfile in "$@"; do
+    testname="${testfile%.test}"
+    testaterm="${testname}.aterm"
 
-    if (echo "$testname" | grep -s "\.yes$") then
+    ## find test expectation
+    if (echo "$testname" | grep -sq "\.yes$") then
        positive=0
-    elif (echo "$testname" | grep -s "\.no$") then
+    elif (echo "$testname" | grep -sq "\.no$") then
        positive=1
     else
-       printf "[$PANIC:EXPECTATION] $testdir\n"
+       printf "[$PANIC:EXPECTATION] $testname\n"
        exit 1
     fi
     echo "Expect $(expect $positive)"
 
-    ## Compile Java classes
-    classes=$(mktemp -d -p . "${testname}.XXXXX.classes")
-    javac -d "$classes" $javafiles 2>&1 | grep -v "Picked up JAVA_TOOL_OPTIONS" | tee "${testname}.javac.out"
-    java_ok=${PIPESTATUS[0]}
-    rm -rf "$classes"
+    ## create test directory with sources
+    if [ -f "$testaterm" -a ! "$testfile" -nt "$testaterm" ]; then
+        echo "Use cached aterm"
+    else
+        ## create test directory
+        testdir=$(mktemp -p . -d "${testname}.XXXXX.sources")
 
-    if (grep -s "should be declared in a file named" "${testname}.javac.out") then
-        printf "[$PANIC:FILENAME] $testdir\n"
-        exit 1
-    fi
+        ## create source directories
+        sourcefiles=$(awk 'match($0, /^\[([a-zA-Z0-9_\.\/]+)\]/, header){print header[1];}' "$testfile")
+        for sourcefile in $sourcefiles; do
+            sourcedir=$(dirname "$sourcefile")
+            mkdir -p "${testdir}/${sourcedir}"
+        done
 
-    echo "JavaC $(expect $java_ok)"
-    if ! agree $java_ok $positive; then
-        printf "[$PANIC:DISAGREE] $testdir\n"
-        continue
-    fi
+        ## write sources
+        (cd "$testdir"; awk 'match($0, /^\[([a-zA-Z0-9_\.\/]+)\]/, header){file=header[1];next;}{print >file;}') <"$testfile"
+        javafiles="$(find "$testdir" -type f -name '*.java')"
 
-    ## Parse files to ATerm
-    testaterm=$(mktemp -p . "${testname}.XXXXX.aterm")
-    printf "Program([" > "$testaterm"
-    sep=""
-    for javafile in $javafiles
-    do
-       filename="${javafile%.java}"
-       aterm="$filename.aterm"
-       if [ -f "$aterm" -a ! "$javafile" -nt "$aterm" ]; then
-           echo "Use cached $aterm"
-       else
+        ## compile Java classes
+        classes=$(mktemp -d -p . "${testname}.XXXXX.classes")
+        javac -d "$classes" $javafiles 2>&1 | grep -v "Picked up JAVA_TOOL_OPTIONS" | tee "${testname}.javac.out"
+        java_ok=${PIPESTATUS[0]}
+        rm -rf "$classes"
+
+        ## check if filenames and classnames correspond
+        if (grep -s "should be declared in a file named" "${testname}.javac.out") then
+            printf "[$PANIC:FILENAME] $testdir\n"
+            exit 1
+        fi
+
+        ## check if test expectation and javac agree
+        echo "javac $(expect $java_ok)"
+        if ! agree $java_ok $positive; then
+            printf "[$PANIC:DISAGREE] $testdir\n"
+            continue
+        fi
+
+        ## parse java files to aterm
+        printf "Program([" > "$testaterm"
+        sep=""
+        for javafile in $javafiles
+        do
+           filename="${javafile%.java}"
+           aterm="$filename.aterm"
            echo "Parse $javafile to $aterm"
            javfile="$filename.jav"
            cp "$javafile" "$javfile"
@@ -94,29 +110,33 @@ do
                continue 2
            fi
            rm -f "$javfile"
-       fi
-       printf "$sep" >> "$testaterm"
-       if [ -z "$sep" ]; then sep=", "; fi
-       cat "$aterm" >> "$testaterm"
-    done
-    printf "])" >> "$testaterm"
+           printf "$sep" >> "$testaterm"
+           if [ -z "$sep" ]; then sep=", "; fi
+           cat "$aterm" >> "$testaterm"
+        done
+        printf "])" >> "$testaterm"
+
+        ## remove test directory
+        rm -rf "$testdir"
+
+    fi
 
     ## Run Statix on the ATerm
     statix check -I $DIR/../src/ java "$testaterm" 2>&1 | tee "$testname.stx.out"
     stx_ok=${PIPESTATUS[0]}
-    rm -f "$testaterm"
     echo "Statix $(expect $stx_ok)"
 
     # compute test result by comparison
     if [ $stx_ok -eq 0 -o $stx_ok -eq 64 ]; then
         if agree $stx_ok $positive; then
-            printf "[$SUCCESS] $testdir\n"
+            printf "[$SUCCESS] $testfile\n"
         else
-            printf "[$FAILURE] $testdir\n"
+            printf "[$FAILURE] $testfile\n"
         fi
     elif [ $stx_ok -eq 65 ]; then
-        printf "[$PANIC:STUCK] $testdir\n"
+        printf "[$PANIC:STUCK] $testfile\n"
     else
-        printf "[$PANIC] Statix failed on $testdir\n"
+        printf "[$PANIC] Statix failed on $testfile\n"
     fi
+
 done

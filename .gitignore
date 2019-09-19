@@ -1,5 +1,7 @@
 bin/
 *.out
 *.aterm
+*.sources/
 *.jav
+*.result
 .statix

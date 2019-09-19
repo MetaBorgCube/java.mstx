@@ -1,0 +1,18 @@
+[A.java]
+public class A {
+    public class I {}
+}
+
+[B.java]
+public class B extends A {}
+
+[C.java]
+public class C extends A {}
+
+[D.java]
+public class D {
+    public void m() {
+        C.I i = new B().new I();
+    }
+}
+

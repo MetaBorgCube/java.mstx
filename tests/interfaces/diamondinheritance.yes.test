@@ -1,0 +1,17 @@
+[A.java]
+public class A implements J, K {}
+
+[B.java]
+public class B {
+    public I f = new A();
+}
+
+[I.java]
+public interface I {}
+
+[J.java]
+public interface J extends I {}
+
+[K.java]
+public interface K extends I {}
+
