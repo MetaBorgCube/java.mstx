@@ -11,7 +11,7 @@ order pkg-ord lexico(
   `PKG < `LEX
 )
 
-// `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE // @lex-type-re
+// `LEX* (`PKGC | `IMP-ST | `IMP-OD `PKGC?)? `EXT* `IMPL* `TYPE // @lex-type-re
 // `PKGC? `EXT* `IMPL* `TYPE // @mem-type-re
 
 order type-ord lexico(
@@ -21,7 +21,7 @@ order type-ord lexico(
 , `PKGC < `IMP-OD
   )
 
-// `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE // @lex-pkg-or-type-re
+// `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD `PKGC?)? `EXT* `IMPL* `TYPE // @lex-pkg-or-type-re
 // `PKGC? `PKG | `PKGC? `EXT* `IMPL* `TYPE // @mem-pkg-or-type-re
 
 order pkg-or-type-ord lexico(
@@ -42,7 +42,7 @@ order expr-ord lexico(
 , `EXT < `LEX
   )
 
-// `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // @amb-re
+// `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD `PKGC?)? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // @amb-re
 
 order amb-ord lexico(
   // pkg-ord
@@ -111,7 +111,7 @@ type-name-ok(s, tn, decl) :- tn match
 
 lexical-type-name(s, id, decl) :- {types, idtypes, idtypes'}
   query s
-        `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE // @lex-type-re
+        `LEX* (`PKGC | `IMP-ST | `IMP-OD `PKGC?)? `EXT* `IMPL* `TYPE // @lex-type-re
         as types
 , filter types ((id', _) where id' == id) idtypes
 , min idtypes @type-ord idtypes'
@@ -159,7 +159,7 @@ package-or-type-name-ok(s, ptn, name) :- ptn match
 lexical-package-or-type-name(s, id, name) :- 
   {names, id-names, id-names', id-names'', l}
   query s
-    `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE // @lex-pkg-or-type-re
+    `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD `PKGC?)? `EXT* `IMPL* `TYPE // @lex-pkg-or-type-re
     as names
   , filter names ((id', _) where id' == id) id-names
   , min id-names reverse-lexico(`TYPE < `PKG) id-names'
@@ -242,7 +242,7 @@ ambiguous-name-ok(s, an, name) :- an match
     // (static) import Type -> TypeName
     // -> PackageName
       query s
-            `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // @amb-re
+            `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD `PKGC?)? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // @amb-re
             as names
     , filter names ((id', _) where id' == id) id-names
     , min id-names reverse-lexico(
