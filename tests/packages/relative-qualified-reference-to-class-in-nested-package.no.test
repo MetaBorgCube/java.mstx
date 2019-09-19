@@ -1,0 +1,9 @@
+[p/A.java]
+package p;
+public class A {
+    public q.B b;
+}
+
+[p/q/B.java]
+package p.q;
+public class B {}

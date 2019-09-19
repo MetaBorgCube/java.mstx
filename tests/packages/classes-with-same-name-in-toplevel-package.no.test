@@ -1,0 +1,7 @@
+[p-1/A.java]
+package p;
+public class A {}
+
+[p-2/A.java]
+package p;
+public class A {}

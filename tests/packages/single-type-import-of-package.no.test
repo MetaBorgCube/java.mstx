@@ -1,0 +1,8 @@
+[p/A.java]
+package p;
+import q.r;
+public class A {}
+
+[q/r/B.java]
+package q.r;
+public class B {}

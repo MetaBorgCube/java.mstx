@@ -1,0 +1,11 @@
+[p/A.java]
+package p;
+import q.*;
+public class A {
+    A a = (p.A) null;
+}
+
+[q/A.java]
+package q;
+public class A {
+}

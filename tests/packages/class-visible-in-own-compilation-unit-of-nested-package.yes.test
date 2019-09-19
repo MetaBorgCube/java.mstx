@@ -1,0 +1,5 @@
+[p/q/A.java]
+package p.q;
+public class A {
+    public A a;
+}

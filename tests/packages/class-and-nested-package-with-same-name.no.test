@@ -1,0 +1,7 @@
+[p/r.java]
+package p;
+public class r {}
+
+[p/r/q.java]
+package p.r;
+public class q {}

@@ -1,0 +1,14 @@
+[p/A.java]
+package p;
+import q.B;
+public class A {
+    public B b = (p.B) null;
+}
+
+[p/B.java]
+package p;
+public class B {}
+
+[q/B.java]
+package q;
+public class B {}

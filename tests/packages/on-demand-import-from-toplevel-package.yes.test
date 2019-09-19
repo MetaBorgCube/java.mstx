@@ -1,0 +1,14 @@
+[p/A.java]
+package p;
+import q.*;
+public class A {
+    public C c;
+}
+
+[q/B.java]
+package q;
+public class B {}
+
+[q/C.java]
+package q;
+public class C {}
