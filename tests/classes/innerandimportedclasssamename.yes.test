@@ -1,6 +1,10 @@
+[jav/util/List.java]
+package jav.util;
+public class List {}
+
 [Test.java]
 package p;
-import java.util.List;
+import jav.util.List;
 public class Test {
     public class List {}
 }
