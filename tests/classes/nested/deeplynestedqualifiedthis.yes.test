@@ -1,0 +1,13 @@
+[p/A.java]
+package p;
+public class A {
+    public class B {
+        public class C { 
+            public class D { 
+                public void m() {
+                    B a = B.this;
+                }
+            }        
+        }
+    }
+}
