@@ -70,6 +70,9 @@ As a consequence this specification is more verbose than it needs to be;
 e.g. mappings over lists are repeated spuriously.
 For a more user-friendly specifiation the full Statix language has more useful features to be utilized.
 
+A schema for the scope graph structure as specificied by the specification is
+shown in [this diagram](doc/scopegraph.pdf).
+
 ## Ambiguous names
 
 TODO
