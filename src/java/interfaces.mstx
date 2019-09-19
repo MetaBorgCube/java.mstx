@@ -15,27 +15,26 @@ no-implements-cycle(s, type) :- {parents, matches}
 
 // interface-declaration-ok : scope * InterfaceDeclaration
 
-interface-declaration-ok(s_pkg, id) :- id match
+interface-declaration-ok(s, id) :- id match
   { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> 
-    {s_header, s_intf, s_this, self}
+    {s_intf, s_this, self}
       interface-modifiers-ok(interfaceModifiers)
 
-    , new s_header
+    // the declaration and prohibit duplicates
     , new s_intf -> (id, self)
-    , no-duplicate-type(s_pkg, id, self)
+    , s -[ `TYPE ]-> s_intf
+    , no-duplicate-type(s, id, self)
     , no-implements-cycle(s_intf, self)
 
     // generics
-    , maybe-type-parameters-ok(s_header, maybeTypeParameters)
+    , maybe-type-parameters-ok(s, maybeTypeParameters, s_intf)
 
     // header
-    , maybe-extends-interfaces-ok(s_header, maybeExtendsInterfaces, s_intf)
+    , maybe-extends-interfaces-ok(s, maybeExtendsInterfaces, s_intf)
 
     , self == INTF(s_intf)
     , s_intf   -[ `SELF ]-> s_intf
-    , s_intf   -[ `LEX  ]-> s_header
-    , s_header -[ `LEX  ]-> s_pkg
-    , s_pkg    -[ `TYPE ]-> s_intf
+    , s_intf   -[ `LEX  ]-> s
 
     // this
     , new s_this -> OBJECT(self)
