@@ -3,27 +3,31 @@
 We specify the binding of Scala objects with the various imports in Scala in Statix.
 The following features are specified:
 
-### Compound objects
+### Features
 
+A more organized list of features based on the Java specfiication organization can be found in [./FEATURES.md](./FEATURES.md).
+But some of the notable ones are:
+ 
 - public packages
-- public `interface` definitions
 - public `class` definitions
 - public fields/methods
 - class extension
-- nested and inner classes
-- interface implementation
-
-### Statements and expressions
-
+- inner classes
 - literals
 - variable declarations
 - method calls
 - return statements
-- `this` expressions
-- Qualified `this`
-- Casts on primitives and reference types
-- Variable assignment
-- Field access
+- (qualified) `this` expressions
+- casts on primitives and reference types
+- variable assignment
+- field access
+
+Java examples that combine some of these features can be found in [./tests/comprehensive/](./tests/comprehensive). Tests that are comprised of multiple files are written in a single file format, and split into a directory structure by the test runner. For example:
+
+```Java
+```
+
+A personal favorite weird Java binding thing is [this gem](./tests/classes/inheritance/inheritedshadowself.no.test).
 
 ## Installation
 
