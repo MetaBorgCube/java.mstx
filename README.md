@@ -1,7 +1,6 @@
 # Statix Specification of (some of) Java's binding
 
-We specify the binding of Scala objects with the various imports in Scala in Statix.
-The following features are specified:
+Being a specification of the binding and typing of a subset of Java 11, focusing on some interesting binding features, such as packages, classes, and interfaces.
 
 ### Features
 
