@@ -1,0 +1,9 @@
+[p/A.java]
+package p;
+public class A {
+    public class B {
+        public void m() {
+             A a = p.A.B.this;
+        }
+    }
+}
