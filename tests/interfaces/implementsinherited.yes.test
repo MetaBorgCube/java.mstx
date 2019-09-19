@@ -1,0 +1,17 @@
+[I.java]
+interface I {
+  public void m(A a);
+  public B n(B a);
+}
+
+[A.java]
+class A extends B implements I {
+  public void m(A a) {}
+}
+
+[B.java]
+class B {
+  public B n(B b) {
+    return b;
+  }
+}

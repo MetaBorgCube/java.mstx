@@ -22,9 +22,21 @@ But some of the notable ones are:
 - variable assignment
 - field access
 
-Java examples that combine some of these features can be found in [./tests/comprehensive/](./tests/comprehensive). Tests that are comprised of multiple files are written in a single file format, and split into a directory structure by the test runner. For example:
+Java examples that combine some of these features can be found in [./tests/comprehensive/](./tests/comprehensive). Tests that are comprised of multiple files are written in a single file format, and split into a directory structure by the test runner. [For example](./tests/packages/class-in-compilation-unit-shadows-on-demand-imported-class.yes.test):
 
 ```Java
+[p/A.java]
+package p;
+import q.*;
+public class A {
+    // class in compilation unit shadows on demand imported class
+    A a = (p.A) null;
+}
+
+[q/A.java]
+package q;
+public class A {
+}
 ```
 
 A personal favorite weird Java binding thing is [this gem](./tests/classes/inheritance/inheritedshadowself.no.test).
