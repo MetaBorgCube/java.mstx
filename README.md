@@ -89,12 +89,9 @@ For a more user-friendly specifiation the full Statix language has more useful f
 A schema for the scope graph structure as specificied by the specification is
 shown in [this diagram](doc/scopegraph.pdf).
 
-## Ambiguous names
+## Scope schema
 
-TODO
+The following depicts a schema of the scoping structure of Java as implemented:
 
-## Packages
+![Scope schema](./doc/scopegraph.pdf)
 
-TODO
-
-##
