@@ -27,13 +27,13 @@ The following features are specified:
 
 ## Installation
 
-Running the spec on Java programs requires Ministatix, the Java spoofax frontend, and
+Running the spec on Java programs requires MiniStatix, the Java Spoofax frontend, and
 a Java compiler to be installed.
 
-Instructions for ministatix can be found in the 
+Instructions for MiniStatix can be found in the 
 [MiniStatix](https://github.com/metaborg/ministatix.hs/) repository.
 
-The Java spoofax frontend can be build using the `javafront` make target.
+The Java Spoofax frontend can be build using the `javafront` make target.
 This will download a Spoofax binary and build the parser in a project local directory.
 
 If this recipe does not work for you, please report an 
@@ -57,7 +57,7 @@ This will run the java compiler on it (assuming it is installed) first.
 The `yes/no` infix in the filename denotes whether the test is expected to typecheck or not.
 
 Then the script will run the spoofax Java parser to produce an aterm, which
-will then be fed into ministatix along with the specification entrypoint.
+will then be fed into MiniStatix along with the specification entrypoint.
 
 Finally the output of both type-checkers is compared to produce a test result.
 
