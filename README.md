@@ -28,12 +28,12 @@ The following features are specified:
 ## Installation
 
 Running the spec on Java programs requires Ministatix, the Java spoofax frontend, and
-a Jcala compiler to be installed.
+a Java compiler to be installed.
 
 Instructions for ministatix can be found in the 
 [MiniStatix](https://github.com/metaborg/ministatix.hs/) repository.
 
-The Jcala spoofax frontend can be build using the `javafront` make target.
+The Java spoofax frontend can be build using the `javafront` make target.
 This will download a Spoofax binary and build the parser in a project local directory.
 
 If this recipe does not work for you, please report an 
