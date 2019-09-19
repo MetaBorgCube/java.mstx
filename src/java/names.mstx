@@ -3,24 +3,48 @@ import stdlib.sets
 
 import java.types.references
 
-order typeord lexico(
-  `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, 
-  `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX
+order pkg-ord lexico(
+  `PKG < `LEX
+  )
+
+order type-ord lexico(
+  `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL,
+  `CU < `IMP,
+  `EXT < `LEX,
+  `IMPL < `LEX,
+  `IMP < `LEX
   )
 
 order pkg-or-type-ord lexico(
-  `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, 
-  `TYPE < `IMPL, `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX
+  // pkg-ord
+  `PKG < `LEX,
+  // type-ord
+  `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL,
+  `CU < `IMP,
+  `EXT < `LEX,
+  `IMPL < `LEX,
+  `IMP < `LEX
   )
 
 order expr-ord lexico(
-  `VAR < `LEX, `FIELD < `LEX, `VAR < `EXT, `FIELD < `EXT, `EXT < `LEX
+  `VAR < `LEX, `VAR < `EXT,
+  `FIELD < `LEX, `FIELD < `EXT,
+  `EXT < `LEX
   )
 
 order amb-ord lexico(
-  `VAR < `LEX, `FIELD < `LEX, `VAR < `EXT, `FIELD < `EXT, `EXT < `LEX, 
-  `PKG < `LEX, `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL, 
-  `EXT < `LEX, `IMPL < `LEX, `IMP < `LEX
+  // pkg-ord
+  `PKG < `LEX,
+  // type-ord
+  `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL,
+  `CU < `IMP,
+  `EXT < `LEX,
+  `IMPL < `LEX,
+  `IMP < `LEX,
+  // expr-ord
+  `VAR < `LEX, `VAR < `EXT,
+  `FIELD < `LEX, `FIELD < `EXT,
+  `EXT < `LEX
   )
 
 // package-name-ok : scope * PackageName * (string * Type)
@@ -39,9 +63,7 @@ lexical-package-name(s, id, decl) :- {pkgs, idpkgs, idpkgs'}
         (`LEX|`CU)* `PKG // LEX-PKG-RE
         as pkgs
 , filter pkgs ((id', _) where id' == id) idpkgs
-, min idpkgs lexico(
-        `PKG < `LEX // PKG-ORD
-      ) idpkgs'
+, min idpkgs @pkg-ord idpkgs'
 , paths-to-package-name(idpkgs', decl).
 
 member-package-name(s, id, decl) :- {pkgs, idpkgs}
@@ -81,7 +103,7 @@ lexical-type-name(s, id, decl) :- {types, idtypes, idtypes'}
         (`LEX|`CU)* `IMP? `EXT* `IMPL* `TYPE // LEX-TYPE-RE
         as types
 , filter types ((id', _) where id' == id) idtypes
-, min idtypes @typeord idtypes'
+, min idtypes @type-ord idtypes'
 , paths-to-type-name(idtypes', decl).
 
 member-type-name(s, id, decl) :- {types, idtypes, idtypes'}
@@ -89,7 +111,7 @@ member-type-name(s, id, decl) :- {types, idtypes, idtypes'}
         `IMP? `EXT* `IMPL* `TYPE // MEM-TYPE-RE
         as types
 , filter types ((id', _) where id' == id) idtypes
-, min idtypes @typeord idtypes'
+, min idtypes @type-ord idtypes'
 , paths-to-type-name(idtypes', decl).
 
 paths-to-type-name(ps, decl) :- {p}

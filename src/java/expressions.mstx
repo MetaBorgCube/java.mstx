@@ -87,11 +87,7 @@ field-access-ty(s, fa, ty) :- {p}
 
 unambiguous-field(reached, id, decl) :- {matched, visible, p}
   filter reached ((id', _) where id' == id) matched
-, min matched
-      lexico( `VAR < `LEX, `VAR < `EXT
-            , `EXT < `LEX
-            )
-      visible
+, min matched @expr-ord visible
 , only(visible, p)
 , datum(p, decl).
 
