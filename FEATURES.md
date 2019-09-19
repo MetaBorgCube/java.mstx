@@ -5,7 +5,6 @@ support interesting name binding features.
 
 The following shows which features of the JLS11 we implement.
 
-* 3 Lexical Structure
 * 4 Types, Values, and Variables
   * 4.1 The Kinds of Types and Values
   * 4.2 ~~Primitive Types and Values~~
@@ -225,5 +224,4 @@ The following shows which features of the JLS11 we implement.
   * 15.28 ~~Constant Expressions~~
 * 16 ~~Definite Assignment~~
 * 17 ~~Threads and Locks~~
-* 18 ~~Type Inference``
-* 19 Syntax
+* 18 ~~Type Inference~~
