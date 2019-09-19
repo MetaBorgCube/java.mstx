@@ -1,9 +1,0 @@
-[p/A.java]
-package p;
-public class A {}
-
-[q/A.java]
-package q;
-import p.A;
-public class A {}
-

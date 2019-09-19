@@ -1,5 +1,0 @@
-[p/B.java]
-package p;
-import p.A;
-public class B {}
-
