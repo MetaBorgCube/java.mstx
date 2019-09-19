@@ -225,5 +225,5 @@ The following shows which features of the JLS11 we implement.
   * 15.28 ~~Constant Expressions~~
 * 16 ~~Definite Assignment~~
 * 17 ~~Threads and Locks~~
-* 18 Type Inference
+* 18 ~~Type Inference``
 * 19 Syntax
