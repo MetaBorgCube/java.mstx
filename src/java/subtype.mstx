@@ -28,5 +28,6 @@ sub-type(ty1, ty2) :- (ty1, ty2) match
   | (OBJECT(tydecl1), OBJECT(tydecl2)) ->
        child-of(tydecl1, tydecl2)
   | (NULL(), OBJECT(_))                -> true 
+  | (VOID(), VOID())                   -> true
   }.
 

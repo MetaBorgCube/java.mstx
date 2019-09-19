@@ -1,9 +1,12 @@
 import stdlib.sets
+import stdlib.paths
+import stdlib.lists
 
 import java.duplicates
 import java.generics
 import java.types.references
 import java.classes.methods
+import java.subtype
 
 no-implements-cycle(s, type) :- {parents, matches}
   query s `IMPL+ as parents
@@ -44,9 +47,9 @@ interface-declaration-ok(s_pkg, id) :- id match
 
 interface-modifiers-ok(ims) :- true.
 
-
 // maybe-super-interfaces-ok maps super-interfaces-ok(*, list(*), *)
 
+// TODO interfaces may not be named twice as super
 maybe-super-interfaces-ok(s, si, s_this) :- si match
   { None()   -> true
   | Some(si) -> super-interfaces-ok(s, si, s_this)
@@ -71,8 +74,8 @@ interface-member-declarations-ok(s, imds) :- imds match
 
 interface-member-declaration-ok(s, imd) :- imd match
   { IMD2IMD(imd) -> interface-method-declaration-ok(s, imd)
-  | CD2IMD(cd)   -> false // class-declaration-ok(s, cd) // Only static classes here right?
-  | ID2IMD(id)   -> interface-declaration-ok(s, id)
+  | CD2IMD(cd)   -> false // all classes in interfaces are static, not supported
+  | ID2IMD(id)   -> false // idem, and same for fields
   | SemiColon()  -> true
   }.
 
@@ -95,7 +98,42 @@ implement-interfaces(is, s_this) :- is match
 // implement-interface : TYPE * scope
 
 implement-interface(i, s_this) :- i match
-  { OBJECT(INTF(s_intf)) -> s_this -[ `IMPL ]-> s_intf }.
+  { OBJECT(INTF(s_intf)) -> {sigs, cls_mths, params}
+      // mark the implements relation in the scope graph
+      s_this -[ `IMPL ]-> s_intf 
+      
+      // Check that the class actually implements the interface;
+      // we don't do overloading, or default methods, so
+      // we just check for methods with the same name, and compatible types.
+      // Any method with the same name and a non-compatible type results in an error.
+      , interface-methods(s_intf, sigs)
+      , class-methods(s_this, cls_mths)
+      , every sigs (p_sig -> {id, mty}
+          datum(p_sig, (id, mty))
+          , cls-implements-sig(cls_mths, id, mty)
+        )
+  }.
+  
+cls-implements-sig(cls_mths, id, mty) :- mty match
+  { METHOD(rty, params) -> 
+     {rty', params', matches, p}
+     // match a method by name
+     filter cls_mths ((id', _) where id == id') matches
+     , only(matches, p)
+     , datum(p, (id, METHOD(rty', params')))
+     
+     // return type may differ covariantly
+     , sub-type(rty', rty)
+
+     // parameter types must match
+     , pointwise-equal(params, params')
+  }.
+  
+interface-methods(s_intf, mths) :-
+  query s_intf `IMPL*`METHOD as mths.
+
+class-methods(s_this, mths) :-
+  query s_this `EXT*`METHOD as mths.
 
 // maybe-extendsinterfaces-ok maps extends-interfaces-ok(*, list(*))
 
