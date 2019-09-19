@@ -8,11 +8,13 @@ imports-ok(s, is, s_cu) :- is match
   | i:is -> import-ok(s, i, s_cu), imports-ok(s, is, s_cu)
   }.
 
-import-ok(s, i, s_cu) :- i match
-  { SingleTypeImport(tn) -> {decl, type, s_type}
+import-ok(s, i, s_pkg) :- i match
+  { SingleTypeImport(tn) -> {decl, s_ty, s_imp}
       type-name-ok(s, tn, decl)
-    , new s_type -> decl
-    , s_cu -[ `TYPE ]-> s_type
+    , type-decl-scope(decl, s_ty)
+    , new s_imp
+    , s_pkg -[ `IMP-ST ]-> s_imp
+    , s_imp -[ `TYPE ]-> s_ty
   | TypeImportOnDemand(ptn) -> {name, s_imp}
       package-or-type-name-ok(s, ptn, name)
     , name match
@@ -21,5 +23,5 @@ import-ok(s, i, s_cu) :- i match
         | TYPE(decl') -> {id', ty}
             type-decl-scope(decl', s_imp)
         }
-    , s_cu -[ `IMP ]-> s_imp
+    , s_pkg -[ `IMP-OD ]-> s_imp
   }.

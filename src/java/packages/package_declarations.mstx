@@ -13,23 +13,21 @@ package-decl(s, ids, s_pkg) :- ids match
   { id:[] ->
       s_pkg -> (id, PKG(s_pkg))
     , s -[ `PKG ]-> s_pkg
-    , s_pkg -[ `LEX ]-> s
     , compose-package(s, id, s_pkg)
   | id:ids -> {s_pkg'}
       new s_pkg' -> (id, PKG(s_pkg'))
     , s -[ `PKG ]-> s_pkg'
-    , s_pkg' -[ `LEX ]-> s
     , compose-package(s, id, s_pkg')
     , package-decl(s_pkg', ids, s_pkg)
   }.
 
 compose-package(s, id, s_pkg) :- {pkgs, idpkgs}
   query s
-        `IMP? `PKG
+        `PKGC? `PKG
         as pkgs
-, filter pkgs ((id', _) where id' == id) idpkgs
+, filter pkgs ((id', PKG(s_pkg')) where id' == id, s_pkg' != s_pkg) idpkgs
 , every idpkgs (p -> {decl, s_pkg'}
     datum(p, decl)
   , package-decl-scope(decl, s_pkg')
-  , s_pkg -[ `IMP ]-> s_pkg'
+  , s_pkg -[ `PKGC ]-> s_pkg'
   ).

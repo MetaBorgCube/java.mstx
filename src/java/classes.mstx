@@ -25,10 +25,9 @@ no-class-cycle(s, type) :- {parents, matches}
 
 normal-class-declaration-ok(s_pkg, ncd) :- ncd match
   { ClassDeclaration(modifiers, id, mTypeParameters, mSuperClass, mSuperInterfaces, declarations) -> 
-    {s_cls, s_header, s_this, self}
+    {s_cls, s_this, self}
       class-modifiers-ok(modifiers)
 
-    , new s_header
     , new s_cls -> (id, self)
 
     // the declaration and prohibit duplicates
@@ -36,17 +35,13 @@ normal-class-declaration-ok(s_pkg, ncd) :- ncd match
     , no-duplicate-type(s_pkg, id, self)
     , no-class-cycle(s_cls, self)
 
-    // generics
-    , maybe-type-parameters-ok(s_header, mTypeParameters)
-
     // check the header
-    , maybe-super-class-ok(s_header, mSuperClass, s_cls)
-    , maybe-super-interfaces-ok(s_header, mSuperInterfaces, s_cls)
+    , maybe-super-class-ok(s_pkg, mSuperClass, s_cls)
+    , maybe-super-interfaces-ok(s_pkg, mSuperInterfaces, s_cls)
 
     , self == CLASS(s_cls)
-    , s_cls    -[ `SELF ]-> s_cls
-    , s_cls    -[ `LEX  ]-> s_header
-    , s_header -[ `LEX  ]-> s_pkg
+    , s_cls -[ `SELF ]-> s_cls
+    , s_cls -[ `LEX  ]-> s_pkg
 
     // this
     , new s_this -> OBJECT(self)

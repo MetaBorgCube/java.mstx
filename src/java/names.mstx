@@ -3,49 +3,61 @@ import stdlib.sets
 
 import java.types.references
 
+
+// `LEX* `PKG // @lex-pkg-re
+// `PKGC? `PKG // @mem-pkg-re
+
 order pkg-ord lexico(
   `PKG < `LEX
-  )
+)
+
+// `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE // @lex-type-re
+// `PKGC? `EXT* `IMPL* `TYPE // @mem-type-re
 
 order type-ord lexico(
-  `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL,
-  `CU < `IMP,
-  `EXT < `LEX,
-  `IMPL < `LEX,
-  `IMP < `LEX
+  `TYPE < `LEX, `TYPE < `IMP-OD, `TYPE < `EXT
+//`TYPE >/< `IMP-ST
+, `IMP-ST < `PKGC, `IMP-ST < `IMP-OD
+, `PKGC < `IMP-OD
   )
+
+// `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE // @lex-pkg-or-type-re
+// `PKGC? `PKG | `PKGC? `EXT* `IMPL* `TYPE // @mem-pkg-or-type-re
 
 order pkg-or-type-ord lexico(
   // pkg-ord
-  `PKG < `LEX,
+  `PKG < `LEX
   // type-ord
-  `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL,
-  `CU < `IMP,
-  `EXT < `LEX,
-  `IMPL < `LEX,
-  `IMP < `LEX
+, `TYPE < `LEX, `TYPE < `IMP-OD, `TYPE < `EXT
+, `IMP-ST < `PKGC, `IMP-ST < `IMP-OD
+, `PKGC < `IMP-OD
   )
 
+// `LEX* `EXT* (`VAR|`FIELD) // @lex-expr-re
+// `EXT* (`VAR|`FIELD) // @mem-expr-re
+
 order expr-ord lexico(
-  `VAR < `LEX, `VAR < `EXT,
-  `FIELD < `LEX, `FIELD < `EXT,
-  `EXT < `LEX
+  `VAR < `LEX, `VAR < `EXT
+, `FIELD < `LEX, `FIELD < `EXT
+, `EXT < `LEX
   )
+
+// `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // @amb-re
 
 order amb-ord lexico(
   // pkg-ord
-  `PKG < `LEX,
+  `PKG < `LEX
   // type-ord
-  `TYPE < `LEX, `TYPE < `EXT, `TYPE < `IMP, `TYPE < `IMPL,
-  `CU < `IMP,
-  `EXT < `LEX,
-  `IMPL < `LEX,
-  `IMP < `LEX,
+, `TYPE < `LEX, `TYPE < `IMP-OD, `TYPE < `EXT
+, `IMP-ST < `PKGC, `IMP-ST < `IMP-OD
+, `PKGC < `IMP-OD
   // expr-ord
-  `VAR < `LEX, `VAR < `EXT,
-  `FIELD < `LEX, `FIELD < `EXT,
-  `EXT < `LEX
+, `VAR < `LEX, `VAR < `EXT
+, `FIELD < `LEX, `FIELD < `EXT
+, `EXT < `LEX
   )
+
+
 
 // package-name-ok : scope * PackageName * (string * Type)
 
@@ -60,7 +72,7 @@ package-name-ok(s, pn, decl) :- pn match
 
 lexical-package-name(s, id, decl) :- {pkgs, idpkgs, idpkgs'}
   query s
-        (`LEX|`CU)* `PKG // LEX-PKG-RE
+        `LEX* `PKG // @lex-pkg-re
         as pkgs
 , filter pkgs ((id', _) where id' == id) idpkgs
 , min idpkgs @pkg-ord idpkgs'
@@ -68,7 +80,7 @@ lexical-package-name(s, id, decl) :- {pkgs, idpkgs, idpkgs'}
 
 member-package-name(s, id, decl) :- {pkgs, idpkgs}
   query s
-        `IMP? `PKG // MEM-PKG-RE
+        `PKGC? `PKG // @mem-pkg-re
         as pkgs
 , filter pkgs ((id', _) where id' == id) idpkgs
 , paths-to-package-name(idpkgs, decl).
@@ -76,10 +88,9 @@ member-package-name(s, id, decl) :- {pkgs, idpkgs}
 paths-to-package-name(ps, decl) :- {id, s_pkg}
   new s_pkg -> decl
 , decl == (id, PKG(s_pkg))
-, every ps (p -> {decl', s_pkg'}
-             datum(p, decl')
-           , package-decl-scope(decl', s_pkg')
-           , s_pkg -[ `IMP ]-> s_pkg'
+, every ps (p -> {s_pkg'}
+             datum(p, (id, PKG(s_pkg')))
+           , s_pkg -[ `PKGC ]-> s_pkg'
            ).
 
 
@@ -100,7 +111,7 @@ type-name-ok(s, tn, decl) :- tn match
 
 lexical-type-name(s, id, decl) :- {types, idtypes, idtypes'}
   query s
-        (`LEX|`CU)* `IMP? `EXT* `IMPL* `TYPE // LEX-TYPE-RE
+        `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE // @lex-type-re
         as types
 , filter types ((id', _) where id' == id) idtypes
 , min idtypes @type-ord idtypes'
@@ -108,7 +119,7 @@ lexical-type-name(s, id, decl) :- {types, idtypes, idtypes'}
 
 member-type-name(s, id, decl) :- {types, idtypes, idtypes'}
   query s
-        `IMP? `EXT* `IMPL* `TYPE // MEM-TYPE-RE
+        `PKGC? `EXT* `IMPL* `TYPE // @mem-type-re
         as types
 , filter types ((id', _) where id' == id) idtypes
 , min idtypes @type-ord idtypes'
@@ -148,7 +159,7 @@ package-or-type-name-ok(s, ptn, name) :- ptn match
 lexical-package-or-type-name(s, id, name) :- 
   {names, id-names, id-names', id-names'', l}
   query s
-    (`LEX|`CU)* `PKG | (`LEX|`CU)* `IMP? `EXT* `IMPL* `TYPE // LEX-PKG-OR-TYPE-RE
+    `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE // @lex-pkg-or-type-re
     as names
   , filter names ((id', _) where id' == id) id-names
   , min id-names reverse-lexico(`TYPE < `PKG) id-names'
@@ -166,9 +177,8 @@ lexical-package-or-type-name(s, id, name) :-
 
 member-package-or-type-name(s, id, name) :- 
   {names, id-names, id-names', id-names'', l}
-  // FIXME if s is a pkg scope, we may need to traverse IMP to get to TYPE
   query s
-    `IMP? `PKG | `IMP? `EXT* `IMPL* `TYPE // MEM-PKG-OR-TYPE-RE
+    `PKGC? `PKG | `PKGC? `EXT* `IMPL* `TYPE // @mem-pkg-or-type-re
     as names
   , filter names ((id', _) where id' == id) id-names
   , min id-names reverse-lexico(`TYPE < `PKG) id-names'
@@ -202,7 +212,7 @@ expression-name-ok(s, en, decl) :- en match
 
 lexical-expression-name(s, id, decl) :- {names, id-names, id-names'}
   query s
-        `LEX* `EXT* (`VAR|`FIELD) // LEX-EXPR-RE
+        `LEX* `EXT* (`VAR|`FIELD) // @lex-expr-re
         as names
 , filter names ((id', _) where id' == id) id-names
 , min id-names @expr-ord id-names'
@@ -210,7 +220,7 @@ lexical-expression-name(s, id, decl) :- {names, id-names, id-names'}
 
 member-expression-name(s, id, decl) :- {names, id-names, id-names'}
   query s
-        `EXT* (`VAR|`FIELD) // MEM-EXPR-RE
+        `EXT* (`VAR|`FIELD) // @mem-expr-re
         as names
 , filter names ((id', _) where id' == id) id-names
 , min id-names @expr-ord id-names'
@@ -232,11 +242,13 @@ ambiguous-name-ok(s, an, name) :- an match
     // (static) import Type -> TypeName
     // -> PackageName
       query s
-            (`LEX|`CU)* `PKG | (`LEX|`CU)* `IMP? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // AMB-RE
+            `LEX* `PKG | `LEX* (`PKGC | `IMP-ST | `IMP-OD)? `PKGC? `EXT* `IMPL* `TYPE | `LEX* `EXT* (`VAR|`FIELD) // @amb-re
             as names
     , filter names ((id', _) where id' == id) id-names
     , min id-names reverse-lexico(
-            `VAR < `TYPE, `VAR < `PKG, `FIELD < `TYPE, `FIELD < `PKG, `TYPE < `PKG
+            `VAR < `TYPE, `VAR < `PKG,
+            `FIELD < `TYPE, `FIELD < `PKG,
+            `TYPE < `PKG
           ) id-names'
     , min id-names' @amb-ord id-names''
     , inhabited(id-names'')
