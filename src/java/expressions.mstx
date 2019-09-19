@@ -94,7 +94,7 @@ unqualified-instance-ok(s, ui, ty) :- ui match
   { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
     {classType, tys, tydecl}
     // instantiated type
-      instance-type-ok(s, id, qualifiedIds, tydecl)
+      lexical-instance-type-ok(s, id, qualifiedIds, tydecl)
     , maybe-type-arguments-ok(s, maybeTypeArguments)
 
     , expressions-ok(s, expressions, tys)
@@ -107,7 +107,7 @@ qualified-instance-ok(s, ui, s_cls, ty) :- ui match
   { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
     {classType, tys, tydecl}
     // instantiated type
-      instance-type-ok(s_cls, id, qualifiedIds, tydecl)
+      member-instance-type-ok(s_cls, id, qualifiedIds, tydecl)
     , maybe-type-arguments-ok(s, maybeTypeArguments)
     , expressions-ok(s, expressions, tys)
     // TODO constructor checking
@@ -115,20 +115,34 @@ qualified-instance-ok(s, ui, s_cls, ty) :- ui match
     , ty == OBJECT(tydecl)
   }.
 
-instance-type-ok(s, id, qids, ty) :- qids match
+lexical-instance-type-ok(s, id, qids, ty) :- qids match
   { [] -> {id'}
       lexical-type-name(s, id, (id', ty))
   | QualifiedId(_, id'):qids -> {name, s'}
       lexical-package-or-type-name(s, id, name)
     , name match
-        { PKG(decl') ->
-            package-decl-scope(decl', s')
-          , instance-type-ok(s', id', qids, ty)
-        | TYPE(decl') -> {ty'}
-            type-decl-scope(decl', s')
-          , instance-type-ok2(s', id', qids, ty)
+        { PKG(decl')  -> package-decl-scope(decl', s')
+        | TYPE(decl') -> type-decl-scope(decl', s')
         }
+    , member-instance-type-ok(s', id', qids, ty)
   }.
+
+member-instance-type-ok(s, id, qids, ty) :- qids match
+  { [] -> {id'}
+      member-type-name(s, id, (id', ty))
+  | QualifiedId(_, id'):qids -> {name, s'}
+      member-package-or-type-name(s, id, name)
+    , name match
+        { PKG(decl')  -> package-decl-scope(decl', s')
+        | TYPE(decl') -> type-decl-scope(decl', s')
+        }
+    , member-instance-type-ok(s', id', qids, ty)
+  }.
+
+
+
+
+
 
 instance-type-ok2(s, id, qids, ty) :- qids match
   { [] -> {id'}
