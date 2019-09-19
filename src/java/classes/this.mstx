@@ -7,6 +7,13 @@ this-type(s, ty) :- {reached, visible, p}
   , only(visible, p)
   , datum(p, ty).
 
+qualified-this-type(s, cls, ty) :- {reached, matches, visible, p}
+  query s `LEX*`THIS as reached
+  , filter reached (typ where typ == OBJECT(cls)) matches
+  , min matches lexico(`THIS < `LEX) visible
+  , only(visible, p)
+  , datum(p, ty).
+
 super-type(s, ty) :- {self, tydecl, cls, supers, p}
   this-type(s, OBJECT(tydecl))
   , type-scope(tydecl, cls)

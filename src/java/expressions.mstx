@@ -28,10 +28,9 @@ expression-ok(s, e, ty) :- e match
     , ty == BOOLEAN()
   | This() ->
       this-type(s, ty)
-  | QThis(typeName) -> {x, x', ty_this}
-      type-name-ok(s, typeName, (x', ty))
-    , this-type(s, ty_this)
-    , sub-type(ty_this, ty)
+  | QThis(typeName) -> {id, cls}
+      type-name-ok(s, typeName, (id, cls))
+      , qualified-this-type(s, cls, ty)
   | CastPrimitive(primitiveType, e) -> {ty_e}
       primitive-type-ok(s, primitiveType, ty)
     , expression-ok(s, e, ty_e)
