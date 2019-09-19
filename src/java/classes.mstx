@@ -33,6 +33,7 @@ normal-class-declaration-ok(s, ncd) :- ncd match
     , new s_cls -> (id, self)
     , s -[ `TYPE ]-> s_cls
     , no-duplicate-type(s, id, self)
+    , no-enclosing-type-same-name(s, id, self)
     , no-class-cycle(s_cls, self)
 
     // generics

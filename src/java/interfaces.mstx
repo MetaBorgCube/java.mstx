@@ -24,6 +24,7 @@ interface-declaration-ok(s, id) :- id match
     , new s_intf -> (id, self)
     , s -[ `TYPE ]-> s_intf
     , no-duplicate-type(s, id, self)
+    , no-enclosing-type-same-name(s, id, self)
     , no-implements-cycle(s_intf, self)
 
     // generics

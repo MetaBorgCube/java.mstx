@@ -1,0 +1,6 @@
+[C.java]
+public class C {
+    public class B {
+        public class C {}
+    }
+}
