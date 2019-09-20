@@ -6,7 +6,7 @@ child-of(left, right) :- (left, right) match
     , filter reaches ((_, CLASS(cls)) where cls == right) matches
     , only(matches, ty) // non-ambiguous super
   | (CLASS(left), INTF(right))  -> {reaches, matches, ty}
-      query left `EXT*`IMPL* as reaches
+      query left `EXT*`IMPL`EXT* as reaches
     , filter reaches ((_, INTF(intf)) where intf == right) matches
     , inhabited(matches)
   }.
