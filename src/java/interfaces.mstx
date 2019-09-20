@@ -11,7 +11,7 @@ import java.subtype
 interface-methods(s_intf, mths) :-
   query s_intf `EXT*`METHOD as mths.
 
-no-implements-cycle(s, type) :- {parents, matches}
+no-extends-cycle(s, type) :- {parents, matches}
   query s `EXT+ as parents
   , filter parents ((name, intf) where intf == type) matches
   , empty(matches).
@@ -28,13 +28,13 @@ interface-declaration-ok(s, id) :- id match
     , s -[ `TYPE ]-> s_intf
     , no-duplicate-type(s, id, self)
     , no-enclosing-type-same-name(s, id, self)
-    , no-implements-cycle(s_intf, self)
+    , no-extends-cycle(s_intf, self)
 
     // generics
     , maybe-type-parameters-ok(s, maybeTyParams, s_intf)
 
     // header
-    , maybe-extends-interfaces-ok(s, maybeTyParams, s_intf)
+    , maybe-extends-interfaces-ok(s, maybeExtends, s_intf)
 
     , self == INTF(s_intf)
     , s_intf   -[ `SELF ]-> s_intf
