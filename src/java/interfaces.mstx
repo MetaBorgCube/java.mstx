@@ -12,33 +12,33 @@ interface-methods(s_intf, mths) :-
   query s_intf `EXT*`METHOD as mths.
 
 no-implements-cycle(s, type) :- {parents, matches}
-  query s `IMPL+ as parents
+  query s `EXT+ as parents
   , filter parents ((name, intf) where intf == type) matches
   , empty(matches).
 
 // interface-declaration-ok : scope * InterfaceDeclaration
 
-interface-declaration-ok(s_pkg, id) :- id match
-  { NormalInterface(modifiers, id, maybeTyParams, maybeExtends, members) -> 
-    {s_header, s_intf, s_this, self}
+interface-declaration-ok(s, id) :- id match
+  {  NormalInterface(modifiers, id, maybeTyParams, maybeExtends, members) ->
+    {s_intf, s_this, self}
       interface-modifiers-ok(modifiers)
 
-    , new s_header
+    // the declaration and prohibit duplicates
     , new s_intf -> (id, self)
-    , no-duplicate-type(s_pkg, id, self)
+    , s -[ `TYPE ]-> s_intf
+    , no-duplicate-type(s, id, self)
+    , no-enclosing-type-same-name(s, id, self)
     , no-implements-cycle(s_intf, self)
 
     // generics
-    , maybe-type-parameters-ok(s_header, maybeTyParams)
+    , maybe-type-parameters-ok(s, maybeTyParams, s_intf)
 
     // header
-    , maybe-extends-interfaces-ok(s_header, maybeExtends, s_intf)
+    , maybe-extends-interfaces-ok(s, maybeTyParams, s_intf)
 
     , self == INTF(s_intf)
     , s_intf   -[ `SELF ]-> s_intf
-    , s_intf   -[ `LEX  ]-> s_header
-    , s_header -[ `LEX  ]-> s_pkg
-    , s_pkg    -[ `TYPE ]-> s_intf
+    , s_intf   -[ `LEX  ]-> s
 
     // this
     , new s_this -> OBJECT(self)

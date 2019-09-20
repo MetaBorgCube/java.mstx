@@ -1,12 +1,12 @@
 import java.duplicates
 import java.types.references
 
-maybe-type-parameters-ok(s_cls, maybeTypeParameters) :- maybeTypeParameters match
+maybe-type-parameters-ok(s, maybeTypeParameters, s_ty) :- maybeTypeParameters match
   { None()                     -> true
   | Some(TypeParameters(ftps)) -> false
   }.
 
-maybe-type-arguments-ok(s_cls, maybeTypeParameters) :- maybeTypeParameters match
+maybe-type-arguments-ok(s, maybeTypeParameters) :- maybeTypeParameters match
   { None()                     -> true
   | Some(TypeParameters(ftps)) -> false
   }.

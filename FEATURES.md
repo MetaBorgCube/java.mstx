@@ -9,8 +9,8 @@ The following shows which features of the JLS11 we implement.
   * 4.1 The Kinds of Types and Values
   * 4.2 ~~Primitive Types and Values~~
   * 4.3 Reference Types and Values
-    * 4.3.1 Objects
-    * 4.3.2 The Class `Object`
+    * 4.3.1 ~~Objects~~
+    * 4.3.2 ~~The Class `Object`~~
     * 4.3.3 ~~The Class `String`~~
     * 4.3.4 When Reference Types are the Same
   * 4.4 ~~Type Variables~~
@@ -20,10 +20,10 @@ The following shows which features of the JLS11 we implement.
   * 4.8 ~~Raw Types~~
   * 4.9 ~~Intersection Types~~
   * 4.10 Subtyping
-    * 4.10.1 ~~Subtyping among Primitive Types~~
+    * 4.10.1 Subtyping among Primitive Types
     * 4.10.2 Subtyping among Class and Interface Types
     * 4.10.3 ~~Subtyping among Array Types~~
-    * 4.10.4 Least Upper Bound
+    * 4.10.4 ~~Least Upper Bound~~
     * 4.10.5 ~~Type Projections~~
   * 4.11 Where Types are Used
   * 4.12 Variables
@@ -34,7 +34,7 @@ The following shows which features of the JLS11 we implement.
       - instance variables
       - ~~array components~~
       - method parameters
-      - constructor parameters
+      - ~~constructor parameters~~
       - ~~lambda parameters~~
       - ~~exception parameters~~
       - local variables
@@ -42,7 +42,7 @@ The following shows which features of the JLS11 we implement.
     * 4.12.5 ~~Initial Values of Variables~~
     * 4.12.6 Types, Classes, and Interfaces
       - class types
-      - ~~interface types~~ ???
+      - interface types
       - ~~type variables and arguments~~
 * 5 Conversions and Contexts
   * 5.1 Kinds of Conversions
@@ -59,8 +59,8 @@ The following shows which features of the JLS11 we implement.
     * 5.1.11 ~~String Conversion~~
     * 5.1.12 Forbidden Conversion
     * 5.1.13 ~~Value Set Conversion~~
-  * 5.2 Assignment Contexts
-  * 5.3 Invocation Contexts
+  * 5.2 ~~Assignment Contexts~~
+  * 5.3 ~~Invocation Contexts~~
   * 5.4 ~~String Contexts~~
   * 5.5 Casting Contexts
   * 5.6 ~~Numeric Contexts~~
@@ -71,14 +71,14 @@ The following shows which features of the JLS11 we implement.
   * 6.4 Shadowing and Obscuring
   * 6.5 Determining the Meaning of a Name
   * 6.6 ~~ Access Control~~
-    - Access modifiers are ignored, and declarations are treated as public. 
+    - Access modifiers are ignored, and all declarations are treated as public. 
   * 6.7 Fully Qualified Names and Canonical Names
 * 7 Packages
   * 7.1 Package members
     - packages
     - type members
       - classes
-      - ~~interfaces~~ ???
+      - interfaces
   * 7.3 Compilation units
   * 7.4 Package declarations
     - named
@@ -114,8 +114,7 @@ The following shows which features of the JLS11 we implement.
     * 8.4.3 Method Signature
     * 8.4.3 Method Modifiers
       - public
-      - ~~protected, private, package, abstract, static, final, synchronized,
-        native, strictfp~~
+      - ~~protected, private, package, abstract, static, final, synchronized, native, strictfp~~
     * 8.4.4 ~~Generic Methods~~
     * 8.4.5 Method Result
       - type
@@ -131,24 +130,11 @@ The following shows which features of the JLS11 we implement.
     * 8.4.9 ~~Overloading~~
   * 8.5 Member type declarations
     - member class
-    - ~~member interface~~ ???
+    - ~~member interface~~
     * 8.5.1 ~~Static Member Type Declarations~~
   * 8.6 ~~Instance Initializers~~
   * 8.7 ~~Static Initializers~~
-  * 8.8 Constructor Declarations
-    * 8.8.1 Formal Parameters
-    * 8.8.2 Constructor Signature
-    * 8.8.3 Constructor Modifiers
-      - public
-      - ~~protected, package, private~~
-    * 8.8.4 ~~Generic Constructors~~
-    * 8.8.5 ~~Constructor Throws~~
-    * 8.8.6 Type of a Constructor
-    * 8.8.7 Constructor Body
-      * 8.8.7.1 ~~Explicit Constructor Invokations~~
-    * 8.8.8 ~~Constructor Overloading~~
-    * 8.8.9 ~~Default Constructor~~
-    * 8.8.10 ~~Preventing Instantiation of a Class~~
+  * 8.8 ~~Constructor Declarations~~
   * 8.9 ~~Enum types~~
 * 9 ~~Interfaces~~
 * 10 ~~Arrays~~
@@ -158,7 +144,7 @@ The following shows which features of the JLS11 we implement.
 * 14 Blocks and Statements
   * 14.1 ~~Normal and Abrupt Completion of Statements~~
   * 14.2 Blocks
-  * 14.3 Local Class Declarations ???
+  * 14.3 Local Class Declarations
   * 14.4 Local Variable Declarations
     - ~~final~~
   * 14.5 Statements
@@ -190,7 +176,7 @@ The following shows which features of the JLS11 we implement.
     * 15.8.1 ~~Lexical Literals~~
     * 15.8.2 ~~Class Literals~~
     * 15.8.3 `this`
-    * 15.8.4 Qualified `this` ???
+    * 15.8.4 Qualified `this`
     * 15.8.5 Parenthesized Expressions
   * 15.9 Class Instance Creation Expressions
     * 15.9.1 Determining the Class being Instantiated
@@ -202,8 +188,7 @@ The following shows which features of the JLS11 we implement.
   * 15.11 Field Access Expressions
     * 15.11.1 Field Access Using a Primary
     * 15.11.2 ~~Accessing Superclass Members using `super`~~
-  * 15.12 Method Invocation Expressions
-    - ~~overloading~~
+  * 15.12 ~~Method Invocation Expressions~~
   * 15.13 ~~Method Reference Expressions~~
   * 15.14 ~~Postfix Expressions~~
   * 15.15 ~~Unary Expression~~

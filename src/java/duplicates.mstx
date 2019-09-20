@@ -1,7 +1,12 @@
 import stdlib.sets
 
 // s contains no other `TYPE declarations with the given name than ty
-no-duplicate-type(s, name, ty) :- {defs, matches}
-    query s `LEX*(`PKGC? `PKG | `TYPE) as defs
-  , filter defs ((name', ty') where name' == name, ty' != ty) matches
-  , empty(matches).
+no-duplicate-type(s, id, ty) :- {defs, matches}
+  query s (`PKGC | `IMP-ST)? (`PKG | `TYPE) as defs
+, filter defs ((id', ty') where id' == id, ty' != ty) matches
+, empty(matches).
+
+no-enclosing-type-same-name(s, id, ty) :- {defs, matches}
+  query s `LEX* `SELF as defs
+, filter defs ((id', ty') where id' == id, ty' != ty) matches
+, empty(matches).
