@@ -1,0 +1,5 @@
+[I.java]
+interface I extends A {}
+
+[A.java]
+class A {}

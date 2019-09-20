@@ -1,0 +1,5 @@
+[B.java]
+class B {}
+
+[A.java]
+class A implements B {}
