@@ -7,6 +7,9 @@ import java.statements.blocks
 import java.statements.locals
 import java.types.references
 
+class-methods(s_this, mths) :-
+  query s_this `EXT*`METHOD as mths.
+
 // method-declaration-ok : scope * MethodDeclaration
 
 method-declaration-ok(s, md) :- md match

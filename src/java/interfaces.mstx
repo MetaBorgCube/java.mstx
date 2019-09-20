@@ -8,6 +8,9 @@ import java.types.references
 import java.classes.methods
 import java.subtype
 
+interface-methods(s_intf, mths) :-
+  query s_intf `EXT*`METHOD as mths.
+
 no-implements-cycle(s, type) :- {parents, matches}
   query s `IMPL+ as parents
   , filter parents ((name, intf) where intf == type) matches
@@ -16,9 +19,9 @@ no-implements-cycle(s, type) :- {parents, matches}
 // interface-declaration-ok : scope * InterfaceDeclaration
 
 interface-declaration-ok(s_pkg, id) :- id match
-  { NormalInterface(interfaceModifiers, id, maybeTypeParameters, maybeExtendsInterfaces, interfaceMemberDeclarations) -> 
+  { NormalInterface(modifiers, id, maybeTyParams, maybeExtends, members) -> 
     {s_header, s_intf, s_this, self}
-      interface-modifiers-ok(interfaceModifiers)
+      interface-modifiers-ok(modifiers)
 
     , new s_header
     , new s_intf -> (id, self)
@@ -26,10 +29,10 @@ interface-declaration-ok(s_pkg, id) :- id match
     , no-implements-cycle(s_intf, self)
 
     // generics
-    , maybe-type-parameters-ok(s_header, maybeTypeParameters)
+    , maybe-type-parameters-ok(s_header, maybeTyParams)
 
     // header
-    , maybe-extends-interfaces-ok(s_header, maybeExtendsInterfaces, s_intf)
+    , maybe-extends-interfaces-ok(s_header, maybeExtends, s_intf)
 
     , self == INTF(s_intf)
     , s_intf   -[ `SELF ]-> s_intf
@@ -42,7 +45,7 @@ interface-declaration-ok(s_pkg, id) :- id match
     , s_intf -[ `THIS ]-> s_this
     
     // body
-    , interface-member-declarations-ok(s_intf, interfaceMemberDeclarations)
+    , interface-member-declarations-ok(s_intf, members)
   }. 
 
 interface-modifiers-ok(ims) :- true.
@@ -80,12 +83,14 @@ interface-member-declaration-ok(s, imd) :- imd match
   }.
 
 interface-method-declaration-ok(s, imd) :- imd match
-  { AbstractMethodDec(interfaceMethodModifiers, methodHeader, methodBody) -> {s_method, decl}
+
+  // abstract methods without a default implementation
+  { AbstractMethodDec(interfaceMethodModifiers, methodHeader, NoMethodBody()) -> 
+    {s_method, decl}
       new s_method -> decl
     , s_method -[ `LEX ]-> s
     , s -[ `METHOD ]-> s_method
     , method-header-ok(s_method, methodHeader, decl)
-    , method-body-ok(s_method, methodBody)
   }.
 
 // implement-interfaces maps implement-interface(list(*), *)
@@ -98,6 +103,8 @@ implement-interfaces(is, s_this) :- is match
 // implement-interface : TYPE * scope
 
 implement-interface(i, s_this) :- i match
+
+  // one can only implement interface-things
   { OBJECT(INTF(s_intf)) -> {sigs, cls_mths, params}
       // mark the implements relation in the scope graph
       s_this -[ `IMPL ]-> s_intf 
@@ -128,12 +135,6 @@ cls-implements-sig(cls_mths, id, mty) :- mty match
      // parameter types must match
      , pointwise-equal(params, params')
   }.
-  
-interface-methods(s_intf, mths) :-
-  query s_intf `IMPL*`METHOD as mths.
-
-class-methods(s_this, mths) :-
-  query s_this `EXT*`METHOD as mths.
 
 // maybe-extendsinterfaces-ok maps extends-interfaces-ok(*, list(*))
 
@@ -144,8 +145,17 @@ maybe-extends-interfaces-ok(s, ei, s_this) :- ei match
 
 // extends-interfaces-ok : scope * ExtendsInterfaces * scope
 
-extends-interfaces-ok(s, ei, s_this) :- ei match
-  { ExtendsInterfaces(classTypes) -> {types}
-      class-types-ok(s, classTypes, types)
-    , implement-interfaces(types, s_this)
+extends-interfaces-ok(s, ei, s_intf) :- ei match
+  { ExtendsInterfaces(intfTypes) -> {types}
+      class-types-ok(s, intfTypes, types)
+    , extends-interfaces(types, s_intf)
   }.
+
+extends-interfaces(types, s_intf) :- types match
+  { []   -> true
+  | i:is -> extends-interface(i, s_intf), extends-interfaces(is, s_intf)
+  }.
+
+extends-interface(type, s_intf) :- type match
+  { OBJECT(INTF(s_ext)) -> s_intf -[ `EXT ]-> s_ext }.
+

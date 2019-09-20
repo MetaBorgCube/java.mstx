@@ -11,8 +11,6 @@ import java.classes.methods
                           
 import java.classes.this
 
-// class-declaration-ok : scope * ClassDeclaration
-
 class-declaration-ok(s, cd) :- cd match
   { NCD2CD(ncd) -> normal-class-declaration-ok(s, ncd)
   }.

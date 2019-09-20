@@ -1,0 +1,16 @@
+[I.java]
+interface J {
+    public void m();
+}
+
+interface K {
+    public void n();
+}
+
+interface I extends J, K {}
+
+[A.java]
+class A implements I {
+  public void m() {}
+  public void n() {}
+} 
