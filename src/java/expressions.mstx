@@ -50,8 +50,7 @@ expression-ok(s, e, ty) :- e match
       unqualified-instance-ok(s, unqualifiedInstance, ty)
   | QualifiedInstance(e, unqualifiedInstance) -> {ty_e, s_ty}
       expression-ok(s, e, ty_e)
-    , instance-scope(ty_e, s_ty)
-    , qualified-instance-ok(s, unqualifiedInstance, s_ty, ty)
+    , qualified-instance-ok(s, unqualifiedInstance, ty_e, ty)
   | L2E(literal) ->
       literal-type(s, literal, ty)
   | EN2E(en) -> {x}
@@ -84,35 +83,43 @@ field-access-ty(s, fa, ty) :- {p}
     //     ...
     }.
 
+
 unambiguous-field(reached, id, decl) :- {matched, visible, p}
   filter reached ((id', _) where id' == id) matched
 , min matched @expr-ord visible
 , only(visible, p)
 , datum(p, decl).
 
+
+// instance creation helper predicates
+
 unqualified-instance-ok(s, ui, ty) :- ui match
   { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
     {classType, tys, tydecl}
-    // instantiated type
+      // instantiated type
       lexical-instance-type-ok(s, id, qualifiedIds, tydecl)
     , maybe-type-arguments-ok(s, maybeTypeArguments)
 
     , expressions-ok(s, expressions, tys)
-    // TODO constructor checking
+      // TODO constructor checking
 
     , ty == OBJECT(tydecl)
+    , ensure-enclosing-instance(s, ty)
   }.
 
-qualified-instance-ok(s, ui, s_cls, ty) :- ui match
+qualified-instance-ok(s, ui, ty_enclosing, ty) :- ui match
   { NewInstance(maybeTypeArguments, annotations, id, qualifiedIds, maybeTypeArgumentsOrDiamond, expressions) ->
-    {classType, tys, tydecl}
-    // instantiated type
-      member-instance-type-ok(s_cls, id, qualifiedIds, tydecl)
+    {s_cls, classType, tys, tydecl}
+      // enclosing type
+      instance-scope(ty_enclosing, s_cls)
+      // instantiated type
+    , member-instance-type-ok(s_cls, id, qualifiedIds, tydecl)
     , maybe-type-arguments-ok(s, maybeTypeArguments)
     , expressions-ok(s, expressions, tys)
-    // TODO constructor checking
+      // TODO constructor checking
 
     , ty == OBJECT(tydecl)
+    , ensure-enclosing-instance(s_cls, ty)
   }.
 
 lexical-instance-type-ok(s, id, qids, ty) :- qids match
@@ -139,17 +146,14 @@ member-instance-type-ok(s, id, qids, ty) :- qids match
     , member-instance-type-ok(s', id', qids, ty)
   }.
 
-
-
-
-
-
-instance-type-ok2(s, id, qids, ty) :- qids match
-  { [] -> {id'}
-      member-type-name(s, id, (id', ty))
-  | QualifiedId(_, id'):qids -> {decl, s'}
-      member-type-name(s, id, decl)
-    , type-decl-scope(decl, s')
-    , instance-type-ok2(s', id', qids, ty)
-  }.
-
+ensure-enclosing-instance(s, ty) :- {s_cls, all_enclosing, direct_enclosing}
+  instance-scope(ty, s_cls)
+, query s_cls `LEX+ `SELF as all_enclosing
+, min all_enclosing lexico(`SELF < `LEX) direct_enclosing
+, every direct_enclosing (p ->
+    {id, ty_enclosing, all_instances, instances, ty_instance}
+    datum(p, (id, ty_enclosing))
+  , query s `LEX* `EXT* `SELF as all_instances
+  , filter all_instances ((id, ty_instance) where ty_instance == ty_enclosing) instances
+  , inhabited(instances)
+  ).

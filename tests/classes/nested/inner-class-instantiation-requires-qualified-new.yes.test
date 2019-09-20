@@ -1,0 +1,12 @@
+[p/A.java]
+package p;
+public class A {
+    public class B {}
+}
+
+[T.java]
+import p.A.B;
+public class T {
+    public p.A a = new p.A();
+    public B b = a.new B();
+}
