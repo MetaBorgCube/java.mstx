@@ -2,8 +2,7 @@
 JAVA_FRONT_DIR     =  lib/java.spfx/lang.java/
 JAVA_FRONT_ARCHIVE = $(JAVA_FRONT)/target/lang.java-1.1.0-SNAPSHOT.spoofax-language
 SPX_VERSION  = 2.6.0-SNAPSHOT
-SUNSHINE_URL =  http://artifacts.metaborg.org/service/local/repositories/releases/content/org/metaborg/org.metaborg.sunshine2/$(SPX_VERSION)/org.metaborg.sunshine2-$(SPX_VERSION).jar
-SUNSHINE_JAR =  bin/org.metaborg.sunshine2-$(SPX_VERSION).jar
+SUNSHINE_JAR =  ../sunshine.jar
 SPEC         =  src/java.mstx
 TESTS        ?= tests/ # directory
 TESTRE       ?= '*' # iname
@@ -31,19 +30,12 @@ all: test
 bin:
 	mkdir -p bin
 
-# get spoofax sunshine
-$(SUNSHINE_JAR): bin
-	$(MAVEN) dependency:copy -DoutputDirectory=bin -Dartifact=org.metaborg:org.metaborg.sunshine2:$(SPX_VERSION) -Dmdep.useBaseVersion=true
-
-# ensure that spoofax sunshine is available
-sunshine: $(SUNSHINE_JAR)
-
 # compile the java frontend
 $(JAVA_FRONT_ARCHIVE): $(JAVA_FRONT_DIR)
 	cd $(JAVA_FRONT_DIR) && $(MAVEN) verify
 
 # ensure the java spoofax language frontend is compiled and available
-javafront: $(JAVA_FRONT_ARCHIVE) sunshine
+javafront: $(JAVA_FRONT_ARCHIVE)
 
 ## Testing
 
