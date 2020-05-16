@@ -33,6 +33,12 @@ statix check -I $DIR/../src/ java 2>&1 || {
     exit 1
 }
 
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    MKTEMP=gmktemp
+else
+    MKTEMP=mktemp
+fi
+
 function expect {
     if [ $1 -eq 0 ]; then printf "pass"; else printf "fail"; fi
 }
@@ -57,11 +63,12 @@ for testfile in "$@"; do
     echo "Expect $(expect $positive)"
 
     ## create test directory with sources
-    if [ -f "$testaterm" -a ! "$testfile" -nt "$testaterm" ]; then
+    if false;
+    then
         echo "Use cached aterm"
     else
         ## create test directory
-        testdir=$(mktemp -p . -d "${testname}.XXXXX.sources")
+        testdir=$("$MKTEMP" -p . -d "${testname}.XXXXX.sources")
 
         ## create source directories
         sourcefiles=$(awk 'match($0, /^\[([a-zA-Z0-9_\-\.\/]+)\]/, header){print header[1];}' "$testfile")
@@ -75,7 +82,7 @@ for testfile in "$@"; do
         javafiles="$(find "$testdir" -type f -name '*.java')"
 
         ## compile Java classes
-        classes=$(mktemp -d -p . "${testname}.XXXXX.classes")
+        classes=$("$MKTEMP" -d -p . "${testname}.XXXXX.classes")
         javac -d "$classes" $javafiles 2>&1 | grep -v "Picked up JAVA_TOOL_OPTIONS" | tee "${testname}.javac.out"
         java_ok=${PIPESTATUS[0]}
         rm -rf "$classes"
