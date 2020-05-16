@@ -35,8 +35,10 @@ statix check -I $DIR/../src/ java 2>&1 || {
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     MKTEMP=gmktemp
+    AWK=gawk
 else
     MKTEMP=mktemp
+    AWK=awk
 fi
 
 function expect {
@@ -71,14 +73,14 @@ for testfile in "$@"; do
         testdir=$("$MKTEMP" -p . -d "${testname}.XXXXX.sources")
 
         ## create source directories
-        sourcefiles=$(awk 'match($0, /^\[([a-zA-Z0-9_\-\.\/]+)\]/, header){print header[1];}' "$testfile")
+        sourcefiles=$("$AWK" 'match($0, /^\[([a-zA-Z0-9_\-\.\/]+)\]/, header){print header[1];}' "$testfile")
         for sourcefile in $sourcefiles; do
             sourcedir=$(dirname "$sourcefile")
             mkdir -p "${testdir}/${sourcedir}"
         done
 
         ## write sources
-        (cd "$testdir"; awk 'match($0, /^\[([a-zA-Z0-9_\-\.\/]+)\]/, header){file=header[1];next;}{print >file;}') <"$testfile"
+        (cd "$testdir"; "$AWK" 'match($0, /^\[([a-zA-Z0-9_\-\.\/]+)\]/, header){file=header[1];next;}{print >file;}') <"$testfile"
         javafiles="$(find "$testdir" -type f -name '*.java')"
 
         ## compile Java classes
