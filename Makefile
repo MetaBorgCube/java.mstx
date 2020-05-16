@@ -66,8 +66,9 @@ test-results:
 ## Cleaning
 
 test-clean:
-	@find $(TESTS) -name "*.class" -exec rm -rf {} \;
-	@find $(TESTS) -name "*.classes" -exec rm -rf {} \;
-	@find $(TESTS) -name "*.sources" -exec rm -rf {} \;
-	@find $(TESTS) -name "*.result" -exec rm -f {} \;
-	@find $(TESTS) -name "*.out" -exec rm -f {} \;
+	-@find $(TESTS) -name "*.class" -exec $(RM) -rf "{}" \;
+	-@find $(TESTS) -name "*.aterm" -exec $(RM) -rf "{}" \;
+	-@find $(TESTS) -name "*.classes" -exec $(RM) -rf "{}" \;
+	-@find $(TESTS) -name "*.sources" -exec $(RM) -rf "{}" \;
+	-@find $(TESTS) -name "*.result" -exec $(RM) -f "{}" \;
+	-@find $(TESTS) -name "*.out" -exec $(RM) -f "{}" \;
