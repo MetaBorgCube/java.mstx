@@ -1,7 +1,7 @@
 # paths
 JAVA_FRONT_DIR     =  lib/java.spfx/lang.java/
 JAVA_FRONT_ARCHIVE = $(JAVA_FRONT)/target/lang.java-1.1.0-SNAPSHOT.spoofax-language
-SPX_VERSION  = 2.6.0-SNAPSHOT
+SPX_VERSION  = 2.5.10
 SUNSHINE_URL =  http://artifacts.metaborg.org/service/local/repositories/releases/content/org/metaborg/org.metaborg.sunshine2/$(SPX_VERSION)/org.metaborg.sunshine2-$(SPX_VERSION).jar
 SUNSHINE_JAR =  bin/org.metaborg.sunshine2-$(SPX_VERSION).jar
 SPEC         =  src/java.mstx
