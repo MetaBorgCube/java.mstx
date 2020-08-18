@@ -1,3 +1,6 @@
+STATIX fail java\.names\.member-type-name.*\"C\"
+JAVAC  fail cannot find symbol
+
 [p/A.java]
 package p;
 public class A {

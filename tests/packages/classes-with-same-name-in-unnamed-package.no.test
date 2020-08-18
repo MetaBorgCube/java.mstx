@@ -1,3 +1,6 @@
+STATIX fail java\.duplicates\.no-duplicate-type
+JAVAC  fail duplicate class
+
 [unnamed-1/A.java]
 public class A {}
 

@@ -1,3 +1,6 @@
+STATIX fail java\.subtype\.sub-type
+JAVAC  fail C cannot be converted to I
+
 [A.java]
 public class A implements I {}
 
@@ -5,7 +8,7 @@ public class A implements I {}
 public class B {
     public C c;
     public I m() {
-	    return this.c;
+           return this.c;
     }
 }
 

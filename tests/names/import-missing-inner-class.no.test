@@ -1,3 +1,6 @@
+STATIX fail java\.names\.member-type-name.*\"B\"
+JAVAC  fail cannot find symbol
+
 [C.java]
 import p.A.B;
 public class C {}

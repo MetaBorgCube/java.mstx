@@ -1,12 +1,13 @@
 STATIX fail java\.names\.lexical-type-name.*\"A\"
 JAVAC  fail cannot find symbol
 
-[A.java]
-public class A {
-}
+[q/A.java]
+package q;
+public class A {}
 
 [p/B.java]
 package p;
 public class B {
-    public A a;
+    public A a = new p.A();
 }
+

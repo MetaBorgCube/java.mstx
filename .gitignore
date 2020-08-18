@@ -5,3 +5,4 @@ bin/
 *.jav
 *.result
 .statix
+_build/

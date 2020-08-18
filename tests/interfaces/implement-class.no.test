@@ -1,5 +1,0 @@
-[A.java]
-class A {}
-
-[B.java]
-class B implements A {}

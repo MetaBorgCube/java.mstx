@@ -1,3 +1,6 @@
+STATIX fail java\.duplicates\.no-duplicate-type
+JAVAC  fail duplicate class
+
 [p-1/A.java]
 package p;
 public class A {}

@@ -1,3 +1,6 @@
+STATIX fail
+JAVAC  fail
+
 [I.java]
 interface I {
   public void m(A a);

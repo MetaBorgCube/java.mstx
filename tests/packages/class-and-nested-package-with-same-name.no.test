@@ -1,3 +1,6 @@
+STATIX fail java\.duplicates\.no-duplicate-type.*\"r\"
+JAVAC  fail class r clashes with package of same name
+
 [p/r.java]
 package p;
 public class r {}

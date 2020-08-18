@@ -1,3 +1,6 @@
+STATIX fail java\.interfaces\.cls-implements-sig
+JAVAC  fail m\(\) in A cannot implement m\(\) in I
+
 [I.java]
 interface I {
   public void m();

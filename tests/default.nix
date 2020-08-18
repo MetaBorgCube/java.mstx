@@ -6,7 +6,6 @@ let
 
   haskellDeps = ps: with ps; [
     base
-    mtl
     parsec
     shake
     strip-ansi-escape
@@ -15,14 +14,18 @@ let
   ];
 
   ghc = haskellPackages.ghcWithPackages haskellDeps;
-
-  nixPackages = [
-    ghc
-    haskellPackages.cabal-install
-  ];
 in
 
 pkgs.stdenv.mkDerivation {
-  name = "test-runner";
-  buildInputs = nixPackages;
+  name = "java-test-runner";
+  buildInputs = with pkgs; [ ghc makeWrapper ];
+
+  src = ./runner.hs;
+
+  unpackPhase = "true";
+  installPhase = ''
+    mkdir -p $out/bin/
+    cp ${./runner.hs} $out/runner.hs
+    makeWrapper ${ghc}/bin/runhaskell $out/bin/java-test-runner --add-flags $out/runner.hs
+  '';
 }

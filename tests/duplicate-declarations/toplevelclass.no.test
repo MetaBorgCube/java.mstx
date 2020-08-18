@@ -1,3 +1,6 @@
+STATIX fail java\.duplicates\.no-duplicate-type.*\"A\"
+JAVAC  fail duplicate class\: A
+
 [A.java]
 public class A {}
 public class A {}

@@ -1,3 +1,6 @@
+STATIX ok
+JAVAC  ok
+
 [C.java]
 import p.A.B;
 public class C {

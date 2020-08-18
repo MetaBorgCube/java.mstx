@@ -1,3 +1,6 @@
+STATIX fail java\.names\.member-type-name.*\"r\"
+JAVAC  fail cannot find symbol
+
 [p/A.java]
 package p;
 import q.r;

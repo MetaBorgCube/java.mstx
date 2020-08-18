@@ -1,3 +1,6 @@
+STATIX ok
+JAVAC  ok
+
 [I.java]
 interface I {
   public void m();

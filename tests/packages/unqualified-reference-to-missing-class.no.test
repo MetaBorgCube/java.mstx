@@ -1,3 +1,6 @@
+STATIX fail java\.names\.lexical-type-name.*\"B\"
+JAVAC  fail cannot find symbol
+
 [p/A.java]
 package p;
 public class A {

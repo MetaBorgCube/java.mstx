@@ -1,3 +1,6 @@
+STATIX ok
+JAVAC  ok
+
 [B.java]
 public class B implements I {}
 

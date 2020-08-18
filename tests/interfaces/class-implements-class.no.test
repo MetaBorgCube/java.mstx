@@ -1,3 +1,6 @@
+STATIX fail java\.interfaces\.implement-interface
+JAVAC  fail interface expected here
+
 [B.java]
 class B {}
 

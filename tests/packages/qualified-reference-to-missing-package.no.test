@@ -1,3 +1,6 @@
+STATIX fail java\.names\.lexical-package-or-type-name.*\"q\"
+JAVAC  fail package q does not exist
+
 [p/A.java]
 package p;
 public class A {

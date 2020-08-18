@@ -1,3 +1,6 @@
+STATIX ok
+JAVAC  ok
+
 [p/q/A.java]
 package p.q;
 public class A {

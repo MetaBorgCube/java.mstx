@@ -1,3 +1,6 @@
+STATIX ok
+JAVAC  ok
+
 [Test.java]
 public class Test {
     public class A {}

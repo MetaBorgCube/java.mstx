@@ -2,15 +2,16 @@ STATIX ok
 JAVAC  ok
 
 [A.java]
-public class A implements J, K {}
-
-[B.java]
-public class B {
-    public I f = new A();
+public class A implements J, K {
+  public int m() {
+    return 42;
+  }
 }
 
 [I.java]
-public interface I {}
+public interface I {
+  public int m();
+}
 
 [J.java]
 public interface J extends I {}

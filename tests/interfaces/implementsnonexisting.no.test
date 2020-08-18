@@ -1,3 +1,6 @@
+STATIX fail java\.names\.lexical-type-name.*\"I\"
+JAVAC  fail cannot find symbol
+
 [A.java]
 public class A {}
 

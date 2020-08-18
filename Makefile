@@ -20,7 +20,6 @@ TEST_SOURCES = $(shell find $(TESTS) -type f -name $(TESTRE:%=%.test))
 TEST_TARGETS = $(TEST_SOURCES:%.test=%.result)
 
 .PHONY: all test
-.PRECIOUS: %.aterm
 
 ## Default target
 
@@ -47,28 +46,12 @@ javafront: $(JAVA_FRONT_ARCHIVE) sunshine
 
 ## Testing
 
-# Turn a java file into its aterm representation
-# using the Spoofax syntax definition
-%.aterm: %.java
-	cp $< $(<:%.java=%.jav)
-	$(PARSE_JAVA) $(<:%.java=%.jav) > $@
-	rm -f $(<:%.java=%.jav)
-
-%.result: %.test src/
-	@./tests/run $< | tee $@ | grep "FAILURE\|SUCCESS\|PANIC"
-
-test: $(TEST_TARGETS)
-test-results: 
-	find . -name '*.result' -exec sh -c "cat {} | grep 'FAILURE\|SUCCESS\|PANIC'" \;
+test: $(TEST_SOURCES)
+	@./tests/run $(TEST_SOURCES) | grep '[\[]SUCCESS\|FAILURE'
 
 ## Building
 
 ## Cleaning
 
 test-clean:
-	-@find $(TESTS) -name "*.class" -exec $(RM) -rf "{}" \;
-	-@find $(TESTS) -name "*.aterm" -exec $(RM) -rf "{}" \;
-	-@find $(TESTS) -name "*.classes" -exec $(RM) -rf "{}" \;
-	-@find $(TESTS) -name "*.sources" -exec $(RM) -rf "{}" \;
-	-@find $(TESTS) -name "*.result" -exec $(RM) -f "{}" \;
-	-@find $(TESTS) -name "*.out" -exec $(RM) -f "{}" \;
+	-@rm -rf _build

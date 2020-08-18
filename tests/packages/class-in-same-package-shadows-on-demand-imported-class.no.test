@@ -1,3 +1,6 @@
+STATIX fail java\.subtype\.sub-type
+JAVAC  fail incompatible types\: q\.B cannot be converted to p\.B
+
 [p/A.java]
 package p;
 import q.*;

@@ -1,3 +1,6 @@
+STATIX fail java\.interfaces\.extends-interface
+JAVAC  fail interface expected here
+
 [I.java]
 interface I extends A {}
 
