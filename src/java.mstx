@@ -13,9 +13,9 @@ import java.packages.compilation_units
 main(p) :- {s}
   new s,
   p match
-    { Program(cus) ->
-        compilation-units-ok(s, cus)
-    | cu ->
+    { [] -> true
+    | cu:cus ->
         compilation-unit-ok(s, cu)
+        , compilation-units-ok(s, cus)
     }.
 
