@@ -176,7 +176,4 @@ rules scriptDir testPath = do
       let sout' = unpack $ stripAnsiEscapeCodes (pack sout)
       writeFileChanged out $ sout'
 
-      let ok = checkStxExpectation statix code sout'
-      if ok
-        then liftIO $ writeFile' res "SUCCESS"
-        else liftIO $ writeFile' res "FAILURE"
+      writeFile' res $ resultString (checkStxExpectation javac code sout)
