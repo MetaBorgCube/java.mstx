@@ -17,7 +17,6 @@ STATIX       = statix $(SPEC)
 JAVAC        = javac
 
 TEST_SOURCES = $(shell find $(TESTS) -type f -name $(TESTRE:%=%.test))
-TEST_TARGETS = $(TEST_SOURCES:%.test=%.result)
 
 .PHONY: all test
 
@@ -46,7 +45,10 @@ javafront: $(JAVA_FRONT_ARCHIVE) sunshine
 
 ## Testing
 
-test: $(TEST_SOURCES)
+tests/runner: tests/runner.hs
+	cd tests && ./build
+
+test: $(TEST_SOURCES) tests/runner
 	@./tests/run $(TEST_SOURCES) | grep '[\[]SUCCESS\|FAILURE'
 
 ## Building
