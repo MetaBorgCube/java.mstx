@@ -56,13 +56,13 @@ parseFile = do
 
 parseExpectation :: Parsec Text u Expect
 parseExpectation =
-      (try $ spaces >> string "ok" >> return ExpectOK)
+      (try $ spaces >> string "ok" <* newline >> return ExpectOK)
   <|> (spaces >> ExpectFail <$> (string "fail" *> manyTill anyChar newline))
 
 parseTest :: String -> Parsec Text u Test
 parseTest name = do
   stxExp  <- string "STATIX" >> parseExpectation
-  javExp  <- string "JAVAC" >> parseExpectation
+  javExp  <- string "JAVAC"  >> parseExpectation
 
   files <- many1 parseFile
   eof
@@ -117,8 +117,6 @@ rules scriptDir testPath = do
     let javaFiles  = [ buildDir </> j                | (j, _) <- files ]
     let aterms     = [ buildDir </> (j -<.> "aterm") | (j, _) <- files ]
     let result     = buildDir </> "result"
-
-    liftIO $ putStrLn $ show aterms
 
     want [ result ]
 
@@ -176,4 +174,4 @@ rules scriptDir testPath = do
       let sout' = unpack $ stripAnsiEscapeCodes (pack sout)
       writeFileChanged out $ sout'
 
-      writeFile' res $ resultString (checkStxExpectation javac code sout)
+      writeFile' res $ resultString (checkStxExpectation statix code sout')
