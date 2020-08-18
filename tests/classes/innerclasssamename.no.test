@@ -1,3 +1,6 @@
+STATIX fail java\.duplicates\.no-enclosing-type-same-name
+JAVAC  fail class C is already defined in package unnamed package
+
 [C.java]
 public class C {
     public class C {}

@@ -1,3 +1,6 @@
+STATIX ok
+JAVAC  ok
+
 [jav/util/List.java]
 package jav.util;
 public class List {}

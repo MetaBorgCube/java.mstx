@@ -1,3 +1,6 @@
+STATIX fail java\.subtype\.sub-type
+JAVAC  fail A\.B cannot be converted to A
+
 [p/A.java]
 package p;
 public class A {

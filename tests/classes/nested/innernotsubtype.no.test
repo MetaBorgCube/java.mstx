@@ -1,0 +1,19 @@
+STATIX fail java\.subtype\.sub-type
+JAVAC  fail incompatible types\: C\.D cannot be converted to A\.B
+
+[A.java]
+class A {
+    class B {}
+}
+
+[C.java]
+class C extends A {
+    class D {}
+}
+
+[Test.java]
+class Test {
+    A.B m() {
+        return new C().new D();
+    }
+}

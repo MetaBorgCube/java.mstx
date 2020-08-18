@@ -1,7 +1,10 @@
-[Test.java]
-public class Point {
+STATIX fail java\.classes\.constructors\.enclosing-type
+JAVAC fail invalid method declaration
+
+[Point.java]
+class Point {
     public int x, y;
-    public Point2D(int x, int y) {
+    public Point2D(int x, int y) { // error
         this.x = x;
         this.y = y;
     }

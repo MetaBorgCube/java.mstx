@@ -1,3 +1,6 @@
+STATIX fail java.expressions.member-instance-type-ok.*Id\(\"B\"\)
+JAVAC  fail cannot find symbol
+
 [A.java]
 public class A {
 }

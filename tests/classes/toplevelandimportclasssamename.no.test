@@ -1,4 +1,11 @@
+STATIX fail java\.duplicates\.no-duplicate-type.*Id\(\"List\"\)
+JAVAC  fail List is already defined in this compilation unit
+
+[javas/util/List.java]
+package javas.util;
+public class List {}
+
 [List.java]
-import java.util.List;
+import javas.util.List;
 public class List {}
 

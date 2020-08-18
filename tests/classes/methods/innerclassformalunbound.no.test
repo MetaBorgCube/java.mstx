@@ -1,3 +1,6 @@
+STATIX fail java.names.member-type-name.*Id\(\"I\"\)
+JAVAC  fail cannot find symbol
+
 [A.java]
 public class A {}
 

@@ -109,7 +109,6 @@ rules scriptDir testPath = do
 
   -- write the java files if they've changed
   forM_ files $ \(name, txt) -> do
-    putStrLn $ "writing " ++ name
     writeFileChanged (buildDir </> name) txt
 
   shake shakeOptions{ shakeFiles = buildDir, shakeChange = ChangeDigest } $ do
@@ -140,11 +139,15 @@ rules scriptDir testPath = do
     -------------------
 
     result %> \out -> do
+      alwaysRerun
+
       stxRes  <- readFile' $ buildDir </> "stx.result"
       javaRes <- readFile' $ buildDir </> "java.result"
 
-      let res = stxRes == "SUCCESS" && javaRes == "SUCCESS"
-      writeFile' out $ resultString res
+      let res = resultString $ stxRes == "SUCCESS" && javaRes == "SUCCESS"
+      writeFile' out res
+
+      liftIO $ putStrLn $ "[" <> res <> "] " <> testPath
 
     [ buildDir </> "java.out" , buildDir </> "java.result" ] &%> \[out, res] -> do
       -- Make sure to depend on the main input
@@ -157,7 +160,10 @@ rules scriptDir testPath = do
                                        cmd "javac -d" buildDir javaFiles
       writeFileChanged out $ sout
 
-      writeFile' res $ resultString (checkJavaExpectation javac code sout)
+      let result = resultString (checkJavaExpectation javac code sout)
+      writeFile' res result
+
+      liftIO $ putStrLn $ "[JAVA:" <> result <> "] " <> testPath
 
     [ buildDir </> "stx.out" , buildDir </> "stx.result" ] &%> \[out, res] -> do
       -- Make sure to depend on the main input
@@ -174,4 +180,7 @@ rules scriptDir testPath = do
       let sout' = unpack $ stripAnsiEscapeCodes (pack sout)
       writeFileChanged out $ sout'
 
-      writeFile' res $ resultString (checkStxExpectation statix code sout')
+      let result = resultString (checkStxExpectation statix code sout')
+      writeFile' res result
+
+      liftIO $ putStrLn $ "[STATIX:" <> result <> "] " <> testPath

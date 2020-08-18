@@ -1,11 +1,11 @@
-STATIX fail
-JAVAC  fail
+STATIX ok
+JAVAC  ok
 
 [A.java]
 public class A {
     public void m() {
-        class C extends B {}
         class B {}
+        class C extends B {}
     }
 }
 

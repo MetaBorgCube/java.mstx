@@ -1,3 +1,6 @@
+STATIX fail java\.subtype\.sub-type
+JAVAC  fail incompatible types\: A\.C cannot be converted to A\.B
+
 [A.java]
 public class A {
     public class B {}

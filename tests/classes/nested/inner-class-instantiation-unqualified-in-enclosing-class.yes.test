@@ -1,3 +1,6 @@
+STATIX ok
+JAVAC  ok
+
 [A.java]
 public class A {
     public B b = new B();
